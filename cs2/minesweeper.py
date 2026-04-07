@@ -64,7 +64,7 @@ def radius(lst,ir,ic,clear=False,labeling=False,replacing=False,first=False,numc
         for cc in (range(-1,2)) :
     
             if row > ir + rr >= 0 <= ic + cc < col :
-                
+
                 if first :
                     il.append([ir+rr,ic+cc])
 
@@ -116,11 +116,11 @@ def clearall(r=None,c=None,skip=False) :#,wid=None) :
     global master,dmaster,row,col,clrd,tiles
     
     if row > r >= 0 <= c < col :
-        if not skip and dmaster[r,c] == 0 :
+        if skip :
             radius(dmaster,r,c,True)
-        else :
-            
+        elif not skip and dmaster[r,c] == 0 :
             radius(dmaster,r,c,True)
+
     
 def makeboard() :
     global tiles,dtiles,row,col,nums,dnums,boxes,dboxes,size,numcl,dnumcl
@@ -131,9 +131,9 @@ def makeboard() :
     for y in range(row) :
     
         for x in range(col) :
-            tiles = np.append(tiles,Fl_Button(size*x,size*y,size,size))
-            numcl = np.append(numcl,Fl_Button(size*x,size*y,size,size))
-            boxes = np.append(boxes,Fl_Box(size*x,size*y,size,size))
+            tiles = np.append(tiles,Fl_Button(size*x,size*y + (size*2 - size//4),size,size))
+            numcl = np.append(numcl,Fl_Button(size*x,size*y + (size*2 - size//4),size,size))
+            boxes = np.append(boxes,Fl_Box(size*x,size*y + (size*2 - size//4),size,size))
             
             
 
@@ -261,71 +261,83 @@ def sweep(wid) :
 
                 if wid.label() == None :
 
-                    if wid in numcl :
-                        around = nums[idx]
-                        
- 
-                        if around == radius(dtiles,r,c,numclear=True) :
-                            mighty = radius(dtiles,r,c,flago=True)
-                            if mighty[0] == mighty[1] :
-                                if mighty[2] :
-                                    for i in range(mighty[2].size) :
-                                        if dmaster[mighty[2][i][0],mighty[2][i][1]] == 0 :
-                                            center = [mighty[2][i][0],mighty[2][i][1]]
-                                    if len(center) == 2 :
-                                        print(dmaster[mighty[2][0][0],mighty[2][0][1]])
-                                        clearall(center[0],center[1])#,wid)
-                                    else :
-                                        for i in range(mighty[2].size) :
-                                            dmaster[mighty[2][i][0],mighty[2][i][1]]
-                            
-
                     if wid in tiles :
-                        
 
                         if master[idx] == 1 :
                             fl_message("The cow's booteh")
                             
-                            
                         elif master[idx] == 0 :
                             clearall(r,c)#,wid)
-
-                            for i in range(len(clrd)) :
-                                
-                                if dtiles[clrd[i][0],clrd[i][1]].label() == None :
-                                    dmaster[clrd[i][0],clrd[i][1]] = 9
-                                    dtiles[clrd[i][0],clrd[i][1]].color(45)
-                                    dtiles[clrd[i][0],clrd[i][1]].deactivate()
-                                    dboxes[clrd[i][0],clrd[i][1]].show()
-                                    if dboxes[clrd[i][0],clrd[i][1]].label() != None :
-                                        dnumcl[clrd[i][0],clrd[i][1]].activate()
-                                
-                            clrd = []
 
                         elif master[idx] == 2 :
                             master[idx] = 9
                             tiles[idx].color(45)
                             tiles[idx].deactivate()
                             boxes[idx].show()
+                            if boxes[idx].label() != None :
+                                numcl[idx].activate()
+
+                    elif wid in numcl :
+                        around = nums[idx]
                         
-                        if 0 not in master and 2 not in master :
-                            fl_message("You da man")
-                            won = True
-        
+                        if around == radius(dtiles,r,c,numclear=True) :
+                            mighty = radius(dtiles,r,c,flago=True)
+
+                            if mighty[0] == mighty[1] :
+
+                                if len(mighty) == 3 :
+
+                                    for i in range(len(mighty[2])) :
+                                        if dmaster[mighty[2][i][0],mighty[2][i][1]] == 0 :
+                                            center = [mighty[2][i][0],mighty[2][i][1]]
+
+                                    if len(center) == 2 :
+                                        clearall(center[0],center[1],True)#,wid)
+
+                                    for i in range(len(mighty[2])) :
+
+                                        if dmaster[mighty[2][i][0],mighty[2][i][1]] != 9 :
+                                            dmaster[mighty[2][i][0],mighty[2][i][1]] = 9
+                                            dtiles[mighty[2][i][0],mighty[2][i][1]].color(45)
+                                            dtiles[mighty[2][i][0],mighty[2][i][1]].deactivate()
+                                            dboxes[mighty[2][i][0],mighty[2][i][1]].show()
+                                            if dboxes[mighty[2][i][0],mighty[2][i][1]].label() != None :
+                                                dnumcl[mighty[2][i][0],mighty[2][i][1]].activate()
+                            else :
+                                fl_message("The cow's botteh")
+
                     elif 2 not in master :
                         fl_message("Mines"*maxmines)
-    
+
+                    for i in range(len(clrd)) :
+                        
+                        if dtiles[clrd[i][0],clrd[i][1]].label() == None :
+                            dmaster[clrd[i][0],clrd[i][1]] = 9
+                            dtiles[clrd[i][0],clrd[i][1]].color(45)
+                            dtiles[clrd[i][0],clrd[i][1]].deactivate()
+                            dboxes[clrd[i][0],clrd[i][1]].show()
+                            if dboxes[clrd[i][0],clrd[i][1]].label() != None :
+                                dnumcl[clrd[i][0],clrd[i][1]].activate()
+                        
+                    clrd = []
+
+                    if 0 not in master and 2 not in master :
+                        fl_message("You da man")
+                        won = True
+        
         case 3 :
-            if wid.label() == "F" :
-                amt -= 1
-                wid.label(None)
-            else :
-                amt += 1
-                wid.label("F")
-                wid.labelcolor(168)
-                wid.labelfont(FL_HELVETICA_BOLD)
-                wid.labelsize(size//2 + size//4)
-            mrem.value(f"{amt} / {maxmines}")
+            if wid in tiles :
+                if wid.label() == "F" :
+                    amt -= 1
+                    wid.label(None)
+                else :
+                    amt += 1
+                    wid.label("F")
+                    wid.labelcolor(168)
+                    wid.labelfont(FL_HELVETICA_BOLD)
+                    wid.labelsize(size//2 + size//4)
+                mrem.label(f"{amt} / {maxmines}")
+
 def vari(sch=1) :
     global clrd,size,row,col,maxmines,mines,click,won,deadson,nums,gamemode,amt
     nums = np.array([])
@@ -355,49 +367,56 @@ def vari(sch=1) :
 
 
 def reset() :
-    global tiles,boxes
+    global tiles,boxes,numcl
     for but in range(tiles.size) :
         Fl.delete_widget(tiles[but])
         Fl.delete_widget(boxes[but])
+        Fl.delete_widget(numcl[but])
 
 def game(wid,sch=1) :
-    global size,maxmines,row,col,sweeper
+    global size,maxmines,row,col,sweeper,gamemode
+    if sch == 0 :
+        sch = gamemode
     reset()
     vari(sch)
     sweeper.begin()
-    sweeper.resize(0,0,size*col,size*row + (size*2))
-    new.resize(0,size*row+size,size,size)
-    mode.resize(size,size*row + size,(size*2)+size//2,size)
-    new.callback(game,sch)
-    mrem.value(f"0 / {maxmines}")
+    sweeper.resize(0,0,size*col,size*row + (size*2 - size//4))
+###    new.resize(sweeper.w()//2 - (size + size//4)//2,0,size + size//4,size + size//4)
+    mode.resize(0,0,sweeper.w(),32)
+#    new.callback(game,sch)
+    mrem.resize(sweeper.w(),0,(size*2)+size//2 + size//4,30)
+    mrem.label(f"0 / {maxmines}")
+    timer.label("000")
     makeboard()
     
     sweeper.end()
 
 vari()
 
-sweeper = Fl_Window(size*col,size*row + (size*2),"Minesweeper")
+sweeper = Fl_Window(size*col,size*row + (size*2 - size//4),"Minesweeper")
 sweeper.begin()
 
-new = Fl_Button(0,size*row + size,size,size)
-new.callback(game)
-new.shortcut(FL_CTRL | ord("r"))
-
-mode = Fl_Menu_Bar(size,size*row + size,(size*2)+size//2,size)
+mode = Fl_Menu_Bar(0,0,sweeper.w(),32)
+print(gamemode)
+mode.add("New",FL_CTRL | ord("r"),game,0)
 mode.add("Difficulty/Beginner",0,game,1)
 mode.add("Difficulty/Intermediate",0,game,2)
 mode.add("Difficulty/Expert",0,game,3)
 
-mrem = Fl_Output(mode.w(),size*row + size,(size*2)+size//2,size)
-mrem.value(f"  0 / {maxmines}")
-mrem.textsize(size - size//2)
+mrem = Fl_Box(sweeper.w(),0,(size*2)+size//2 + size//4,30)
+mrem.label(f"0 / {maxmines}")
+mrem.labelsize(32)
+mrem.align(FL_ALIGN_LEFT)
+
+timer = Fl_Box(size + size//8,0,(size*2)+size//2 + size//4,30)
+timer.label("000")
+timer.labelsize(32)
+timer.align(FL_ALIGN_CENTER)
 
 makeboard()
-    
+
 sweeper.end()
 sweeper.show()
-
-
 
 Fl.visible_focus(0)
 Fl.run()
