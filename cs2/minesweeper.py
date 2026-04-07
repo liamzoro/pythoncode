@@ -131,9 +131,9 @@ def makeboard() :
     for y in range(row) :
     
         for x in range(col) :
-            tiles = np.append(tiles,Fl_Button(size*x,size*y + (size*2 - size//4),size,size))
-            numcl = np.append(numcl,Fl_Button(size*x,size*y + (size*2 - size//4),size,size))
-            boxes = np.append(boxes,Fl_Box(size*x,size*y + (size*2 - size//4),size,size))
+            tiles = np.append(tiles,Fl_Button(size*x,size*y + 32,size,size))
+            numcl = np.append(numcl,Fl_Button(size*x,size*y + 32,size,size))
+            boxes = np.append(boxes,Fl_Box(size*x,size*y + 32,size,size))
             
             
 
@@ -239,6 +239,7 @@ def sweep(wid) :
         case 1 :
             if wid.label() != "F" :
                 if click == 0 and 2 in master :
+                    Fl.add_timeout(1.0,timerclock)
                     if maxmines <= (row*col - 9) :
                         firstclick(center)
                     else :
@@ -264,6 +265,7 @@ def sweep(wid) :
                     if wid in tiles :
 
                         if master[idx] == 1 :
+                            timerclock(True)
                             fl_message("The cow's booteh")
                             
                         elif master[idx] == 0 :
@@ -304,6 +306,7 @@ def sweep(wid) :
                                             if dboxes[mighty[2][i][0],mighty[2][i][1]].label() != None :
                                                 dnumcl[mighty[2][i][0],mighty[2][i][1]].activate()
                             else :
+                                timerclock(True)
                                 fl_message("The cow's botteh")
 
                     elif 2 not in master :
@@ -322,6 +325,8 @@ def sweep(wid) :
                     clrd = []
 
                     if 0 not in master and 2 not in master :
+                        timerclock(True)
+                        mrem.label(f"{maxmines} / {maxmines}")
                         fl_message("You da man")
                         won = True
         
@@ -338,8 +343,22 @@ def sweep(wid) :
                     wid.labelsize(size//2 + size//4)
                 mrem.label(f"{amt} / {maxmines}")
 
+def timerclock(stop=False) :
+    global timer,seconds
+    if stop or seconds >= 999 :
+        Fl.remove_timeout(timerclock)
+        return
+    seconds += 1
+    if seconds > 99 :
+        timer.label(f"{seconds}")
+    elif seconds > 9 :
+        timer.label(f"0{seconds}")
+    else :
+        timer.label(f"00{seconds}")
+    Fl.repeat_timeout(1.0,timerclock)
+
 def vari(sch=1) :
-    global clrd,size,row,col,maxmines,mines,click,won,deadson,nums,gamemode,amt
+    global clrd,size,row,col,maxmines,mines,click,won,deadson,nums,gamemode,amt,seconds
     nums = np.array([])
     clrd = []
     match sch :
@@ -364,14 +383,16 @@ def vari(sch=1) :
     click = 0
     amt = 0
     won = False
-
+    seconds = 0
 
 def reset() :
-    global tiles,boxes,numcl
+    global tiles,boxes,numcl,timer
     for but in range(tiles.size) :
         Fl.delete_widget(tiles[but])
         Fl.delete_widget(boxes[but])
         Fl.delete_widget(numcl[but])
+    Fl.remove_timeout(timerclock)
+    timer.label("000")
 
 def game(wid,sch=1) :
     global size,maxmines,row,col,sweeper,gamemode
@@ -380,10 +401,8 @@ def game(wid,sch=1) :
     reset()
     vari(sch)
     sweeper.begin()
-    sweeper.resize(0,0,size*col,size*row + (size*2 - size//4))
-###    new.resize(sweeper.w()//2 - (size + size//4)//2,0,size + size//4,size + size//4)
+    sweeper.resize(0,0,size*col,size*row + 32)
     mode.resize(0,0,sweeper.w(),32)
-#    new.callback(game,sch)
     mrem.resize(sweeper.w(),0,(size*2)+size//2 + size//4,30)
     mrem.label(f"0 / {maxmines}")
     timer.label("000")
@@ -393,11 +412,10 @@ def game(wid,sch=1) :
 
 vari()
 
-sweeper = Fl_Window(size*col,size*row + (size*2 - size//4),"Minesweeper")
+sweeper = Fl_Window(size*col,size*row + 32,"Minesweeper")
 sweeper.begin()
 
 mode = Fl_Menu_Bar(0,0,sweeper.w(),32)
-print(gamemode)
 mode.add("New",FL_CTRL | ord("r"),game,0)
 mode.add("Difficulty/Beginner",0,game,1)
 mode.add("Difficulty/Intermediate",0,game,2)
