@@ -1,6 +1,7 @@
 from fltk import *
 import random
 import time
+import pickle
 
 class Blinken(Fl_Window) :
     masterSequence = []
@@ -9,15 +10,17 @@ class Blinken(Fl_Window) :
     gameDifficulty = 0
     patternAdditions = 1
     allChosenButtons = []
+    skipOptions = False
 
     def __init__(self,width,height,title) :
         super().__init__(width,height,title)
 
         self.begin()
+        self.color(fl_rgb_color(33,32,33))
+
         self.buttonBackground = Fl_Box(height//8,height//6,width - (height//8)*2,height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
-        self.buttonBackground.color(34)
-        self.buttonBackground.label("...")
+        self.buttonBackground.color(FL_BLACK)
         self.buttonBackground.labelsize(height//8)
         self.buttonBackground.labelcolor(7)
         
@@ -53,6 +56,7 @@ class Blinken(Fl_Window) :
         
         for but in range(len(self.buttons)) :
             self.buttons[but].callback(self.handleClick)
+            self.buttons[but].box(FL_ENGRAVED_BOX)
             self.resizable(self.buttons[but])
         self.resizable(self.buttonBackground)
 
@@ -65,7 +69,7 @@ class Blinken(Fl_Window) :
         self.gameOptions.color(0)
         self.gameOptions.textcolor(7)
 
-        self.buttonColors = [FL_YELLOW,FL_RED,FL_BLUE,FL_GREEN,94,80,176,62]
+        self.buttonColors = [3,128,220,FL_GREEN,94,80,176,62]
 
         self.end()
 
@@ -83,42 +87,66 @@ class Blinken(Fl_Window) :
 
         if Blinken.userSequence != Blinken.masterSequence[:len(Blinken.userSequence)] :
             fl_message("Stinker input")
+            with open("ssrecords.pickle","rb") as recordsFile :
+                recordsList = list(pickle.load(recordsFile))
+                recordsList.append(len(Blinken.masterSequence) - patternAdditions)
+            with open("ssrecords.pickle","wb") as recordsFile :
+                pickle.dump(recordsList,recordsFile)
             Blinken.masterSequence = []
             Blinken.userSequence = []
+            return
 
         elif len(Blinken.userSequence) == len(Blinken.masterSequence) :
             Blinken.userSequence = []
             Blinken.sequenceStarted = False
-            Fl.add_timeout(1.0,self.runSequenceLoop)
-
+            self.simpleCountdown()
+            self.runSequenceLoop()
 
     def chooseDifficulty(self,wid,difficulty) :
-        if difficulty == 2 :
-            Blinken.gameDifficulty = 2
-        if difficulty == 1 :
-            Blinken.gameDifficulty = 1
-        if difficulty == 0 :
-            Blinken.gameDifficulty = 0
+        if Blinken.skipOptions :
+            return
+        match difficulty :
+            case 2 :
+                Blinken.gameDifficulty = 2
+            case 1 :
+                Blinken.gameDifficulty = 1
+            case 0 :
+                Blinken.gameDifficulty = 0
+
+    def simpleCountdown(self) :
+        self.gameOptions.textcolor(40)
+        Blinken.skipOptions = True
+        for period in range(3,-1,-1) :
+            self.buttonBackground.label("."*period)
+            self.redraw()
+            Fl.flush()
+            Fl.check()
+            time.sleep(0.5)
     
     def beginSequence(self,wid) :
+        if Blinken.skipOptions :
+            return
         Blinken.masterSequence = []
-        if Blinken.gameDifficulty == 2 :
-            Blinken.patternAdditions = 4
-        elif Blinken.gameDifficulty == 1 :
-            Blinken.patternAdditions = 2
-        elif Blinken.gameDifficulty == 0 :
-            Blinken.patternAdditions = 1
+        Blinken.sequenceStarted = False
         
-        Fl.add_timeout(1.0,self.runSequenceLoop)
+        match Blinken.gameDifficulty :
+            case 2 :
+                Blinken.patternAdditions = 4
+            case 1 :
+                Blinken.patternAdditions = 2
+            case 0 :
+                Blinken.patternAdditions = 1
+        
+        self.simpleCountdown()
+        self.runSequenceLoop()
 
     def runSequenceLoop(self) :
+
         for i in range(len(Blinken.masterSequence) + Blinken.patternAdditions) :
-            time.sleep(0.5)
             if i + 1 > len(Blinken.masterSequence) :
                 chosenButton = random.randrange(4)
                 Blinken.allChosenButtons.append(chosenButton)
                 Blinken.masterSequence.append(chosenButton)
-                print(chosenButton)
             else :
                 chosenButton = Blinken.masterSequence[i]
 
@@ -131,9 +159,12 @@ class Blinken(Fl_Window) :
             self.redraw()
             Fl.flush()
             Fl.check()
-            print("jibbit")
+            time.sleep(0.5)
 
         Blinken.sequenceStarted = True
+        Blinken.skipOptions = False
+        self.gameOptions.textcolor(7)
+        self.redraw()
 
 ligma = Blinken(512,256,"LirmaBlinken")
 ligma.show()
