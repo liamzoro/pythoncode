@@ -4,14 +4,14 @@ import random
     
     
 def mastermake() :
-    global master,dmaster,nums,dnums,maxmines,row,col
+    global master,d_master,surroundingMines,d_surroundingMines,maxMines,row,col
     master = np.array([2]*(row*col))
-    nums = np.array([0]*(row*col))
+    surroundingMines= np.array([0]*(row*col))
     mines = 0
     
-    if maxmines <= row*col :
+    if maxMines<= row*col :
     
-        while mines < maxmines :
+        while mines < maxMines:
             idx = random.randrange(row*col)
     
             if master[idx] != 1 :
@@ -22,35 +22,35 @@ def mastermake() :
         fl_message("Too many mines")
         
     
-    dmaster = master.reshape(row,col)
-    dnums = nums.reshape(row,col)
+    d_master = master.reshape(row,col)
+    d_surroundingMines= surroundingMines.reshape(row,col)
     
     for ir in range(row) :
     
         for ic in range(col) :
     
-            if dmaster[ir,ic] != 1 :
+            if d_master[ir,ic] != 1 :
     
-                if radius(dmaster,ir,ic) :
-                    dmaster[ir,ic] = 0
+                if radiusChecker(d_master,ir,ic) :
+                    d_master[ir,ic] = 0
 
     makenums()
 
 def makenums() :
-    global row,col,nums,dnums
-    for l in range(nums.size) :
-        nums[l] = 0
+    global row,col,surroundingMines,d_surroundingMines
+    for l in range(surroundingMines.size) :
+        surroundingMines[l] = 0
 
     for ir in range(row) :
 
         for ic in range(col) :
 
-            if dmaster[ir,ic] == 2 :
+            if d_master[ir,ic] == 2 :
 
-                dnums[ir,ic] = radius(dmaster,ir,ic,labeling=True)
+                d_surroundingMines[ir,ic] = radiusChecker(d_master,ir,ic,labeling=True)
     
-def radius(lst,ir,ic,clear=False,labeling=False,replacing=False,first=False,numclear=False,flago=False) :
-    global clrd,row,col,dmaster
+def radiusChecker(lst,ir,ic,clear=False,labeling=False,replacing=False,first=False,numberClearing=False,flago=False) :
+    global cleared,row,col,d_master
     fc = True
     c = 0
     il = []
@@ -74,8 +74,8 @@ def radius(lst,ir,ic,clear=False,labeling=False,replacing=False,first=False,numc
                     elif lst[ir+rr,ic+cc] != 1 :
                         lst[ir+rr,ic+cc] = 2
     
-                elif clear and [ir+rr,ic+cc] not in clrd :
-                    clrd.append([ir+rr,ic+cc])
+                elif clear and [ir+rr,ic+cc] not in cleared :
+                    cleared.append([ir+rr,ic+cc])
     
                     if lst[ir+rr,ic+cc] == 0 :
     
@@ -87,52 +87,52 @@ def radius(lst,ir,ic,clear=False,labeling=False,replacing=False,first=False,numc
                         c += 1
                         fc = False
                     
-                    if numclear :
+                    if numberClearing:
                         if lst[ir+rr,ic+cc].label() == "F" :
                             f += 1
 
                     elif flago :
                         if lst[ir+rr,ic+cc].label() == "F" :
                             fl.append([ir+rr,ic+cc])
-                        if dmaster[ir+rr,ic+cc] == 1 :
+                        if d_master[ir+rr,ic+cc] == 1 :
                             ml.append([ir+rr,ic+cc])
-                        elif dmaster[ir+rr,ic+cc] != 9 :
+                        elif d_master[ir+rr,ic+cc] != 9 :
                             gl.append([ir+rr,ic+cc])
 
 
 
-    if not labeling and not clear and not replacing and not first and not numclear and not flago :
+    if not labeling and not clear and not replacing and not first and not numberClearing and not flago :
         return fc
     elif labeling :
         return c
     elif first :
         return il
-    elif numclear :
+    elif numberClearing :
         return f
     elif flago :
         return [fl,ml,gl]
     
 def clearall(r=None,c=None,skip=False) :#,wid=None) :
-    global master,dmaster,row,col,clrd,tiles
+    global master,d_master,row,col,cleared,tiles
     
     if row > r >= 0 <= c < col :
         if skip :
-            radius(dmaster,r,c,True)
-        elif not skip and dmaster[r,c] == 0 :
-            radius(dmaster,r,c,True)
+            radiusChecker(d_master,r,c,True)
+        elif not skip and d_master[r,c] == 0 :
+            radiusChecker(d_master,r,c,True)
 
     
 def makeboard() :
-    global tiles,dtiles,row,col,nums,dnums,boxes,dboxes,size,numcl,dnumcl
+    global tiles,d_tiles,row,col,surroundingMines,d_surroundingMines,boxes,d_boxes,size,areaClear,d_areaClear
     tiles = np.array([])
     boxes = np.array([])
-    numcl = np.array([])
+    areaClear = np.array([])
 
     for y in range(row) :
     
         for x in range(col) :
             tiles = np.append(tiles,Fl_Button(size*x,size*y + 32,size,size))
-            numcl = np.append(numcl,Fl_Button(size*x,size*y + 32,size,size))
+            areaClear = np.append(areaClear,Fl_Button(size*x,size*y + 32,size,size))
             boxes = np.append(boxes,Fl_Box(size*x,size*y + 32,size,size))
             
             
@@ -140,49 +140,49 @@ def makeboard() :
     for but in range(tiles.size) :
         tiles[but].callback(sweep)
         boxes[but].hide()
-        numcl[but].box(FL_NO_BOX)
-        numcl[but].deactivate()
-        numcl[but].callback(sweep)
+        areaClear[but].box(FL_NO_BOX)
+        areaClear[but].deactivate()
+        areaClear[but].callback(sweep)
         
-        if nums[but] != 0 :
-            boxes[but].label(str(nums[but]))
+        if surroundingMines[but] != 0 :
+            boxes[but].label(str(surroundingMines[but]))
             boxes[but].labelfont(FL_HELVETICA_BOLD)
             boxes[but].labelsize(size//2 + size//4)
-            colornums(boxes,nums,but)
+            colornums(boxes,surroundingMines,but)
         
-    dtiles = tiles.reshape(row,col)
-    dboxes = boxes.reshape(row,col)
-    dnumcl = numcl.reshape(row,col)
+    d_tiles = tiles.reshape(row,col)
+    d_boxes = boxes.reshape(row,col)
+    d_areaClear = areaClear.reshape(row,col)
     
-def surmines() :
-    global nums,dnums,boxes
-    for but in range(nums.size) :
+def surroundingMinesChecker() :
+    global surroundingMines,d_surroundingMines,boxes
+    for but in range(surroundingMines.size) :
         boxes[but].label(None)
         
-        if nums[but] != 0 :
-            boxes[but].label(str(nums[but]))
+        if surroundingMines[but] != 0 :
+            boxes[but].label(str(surroundingMines[but]))
             boxes[but].labelfont(FL_HELVETICA_BOLD)
             boxes[but].labelsize(size//2 + size//4)
-            colornums(boxes,nums,but)
+            colornums(boxes,surroundingMines,but)
 
-def firstclick(center,max=False) :
-    global row,col,master,dmaster
+def firstClick(center,max=False) :
+    global row,col,master,d_master
     ir = center[0]
     ic = center[1]
-    il = radius(dmaster,ir,ic,first=True)
+    il = radiusChecker(d_master,ir,ic,first=True)
     rep = True
 
-    if dmaster[ir,ic] == 1 :
+    if d_master[ir,ic] == 1 :
         while rep :
             ridx = random.randrange(row)
             cidx = random.randrange(col)
-            if dmaster[ridx,cidx] != 1 and [ridx,cidx] not in il :
+            if d_master[ridx,cidx] != 1 and [ridx,cidx] not in il :
                 rep = False
-                dmaster[ridx,cidx] = 1
-                radius(dmaster,ridx,cidx,replacing=True)
+                d_master[ridx,cidx] = 1
+                radiusChecker(d_master,ridx,cidx,replacing=True)
 
     if not max :
-        dmaster[ir,ic] = 0
+        d_master[ir,ic] = 0
 
         for rr in range(-1,2) :
         
@@ -191,26 +191,26 @@ def firstclick(center,max=False) :
 
                 if row > ir + rr >= 0 <= ic + cc < col :
                     
-                    if dmaster[ir+rr,ic+cc] == 1 :
+                    if d_master[ir+rr,ic+cc] == 1 :
 
-                        if radius(dmaster,ir+rr,ic+cc) :
-                            dmaster[ir+rr,ic+cc] = 0
+                        if radiusChecker(d_master,ir+rr,ic+cc) :
+                            d_master[ir+rr,ic+cc] = 0
                         else :
-                            dmaster[ir+rr,ic+cc] = 2
+                            d_master[ir+rr,ic+cc] = 2
 
                         while rep :
                             ridx = random.randrange(row)
                             cidx = random.randrange(col)
-                            if dmaster[ridx,cidx] != 1 and [ridx,cidx] not in il :
+                            if d_master[ridx,cidx] != 1 and [ridx,cidx] not in il :
                                 rep = False
-                                dmaster[ridx,cidx] = 1
-                                radius(dmaster,ridx,cidx,replacing=True)
+                                d_master[ridx,cidx] = 1
+                                radiusChecker(d_master,ridx,cidx,replacing=True)
 
     else :
-        dmaster[ir,ic] = 2
+        d_master[ir,ic] = 2
 
-def colornums(boxes,nums,but) :
-    match nums[but] :
+def colornums(boxes,surroundingMines,but) :
+    match surroundingMines[but] :
         case 1 :
             boxes[but].labelcolor(FL_BLUE)
         case 2 :
@@ -229,31 +229,31 @@ def colornums(boxes,nums,but) :
             boxes[but].labelcolor(42)
 
 def sweep(wid) :
-    global master,dmaster,clrd,tiles,dtiles,click,won,maxmines,num,dnums,boxes,amt,numcl,dnumcl
+    global master,d_master,cleared,tiles,d_tiles,click,won,maxMines,num,d_surroundingMines,boxes,flagCount,areaClear,d_areaClear
     if wid in tiles :
-        center = [np.where(dtiles==wid)[0][0],np.where(dtiles==wid)[1][0],np.where(tiles==wid)[0][0]]
+        center = [np.where(d_tiles==wid)[0][0],np.where(d_tiles==wid)[1][0],np.where(tiles==wid)[0][0]]
     else :
-        center = [np.where(dnumcl==wid)[0][0],np.where(dnumcl==wid)[1][0],np.where(numcl==wid)[0][0]]
+        center = [np.where(d_areaClear==wid)[0][0],np.where(d_areaClear==wid)[1][0],np.where(areaClear==wid)[0][0]]
     
     match Fl.event_button() :
         case 1 :
             if wid.label() != "F" :
                 if click == 0 and 2 in master :
                     Fl.add_timeout(1.0,timerclock)
-                    if maxmines <= (row*col - 9) :
-                        firstclick(center)
+                    if maxMines<= (row*col - 9) :
+                        firstClick(center)
                     else :
-                        firstclick(center,True)
+                        firstClick(center,True)
                     for ir in range(row) :
     
                         for ic in range(col) :
                     
-                            if dmaster[ir,ic] != 1 :
+                            if d_master[ir,ic] != 1 :
                     
-                                if radius(dmaster,ir,ic) :
-                                    dmaster[ir,ic] = 0
+                                if radiusChecker(d_master,ir,ic) :
+                                    d_master[ir,ic] = 0
                     makenums()
-                    surmines()
+                    surroundingMinesChecker()
                     click = 1
 
                 idx = center[2]
@@ -277,20 +277,20 @@ def sweep(wid) :
                             tiles[idx].deactivate()
                             boxes[idx].show()
                             if boxes[idx].label() != None :
-                                numcl[idx].activate()
+                                areaClear[idx].activate()
 
-                    elif wid in numcl :
-                        around = nums[idx]
+                    elif wid in areaClear :
+                        around = surroundingMines[idx]
                         
-                        if around == radius(dtiles,r,c,numclear=True) :
-                            mighty = radius(dtiles,r,c,flago=True)
+                        if around == radiusChecker(d_tiles,r,c,numberClearing=True) :
+                            mighty = radiusChecker(d_tiles,r,c,flago=True)
 
                             if mighty[0] == mighty[1] :
 
                                 if len(mighty) == 3 :
 
                                     for i in range(len(mighty[2])) :
-                                        if dmaster[mighty[2][i][0],mighty[2][i][1]] == 0 :
+                                        if d_master[mighty[2][i][0],mighty[2][i][1]] == 0 :
                                             center = [mighty[2][i][0],mighty[2][i][1]]
 
                                     if len(center) == 2 :
@@ -298,50 +298,50 @@ def sweep(wid) :
 
                                     for i in range(len(mighty[2])) :
 
-                                        if dmaster[mighty[2][i][0],mighty[2][i][1]] != 9 :
-                                            dmaster[mighty[2][i][0],mighty[2][i][1]] = 9
-                                            dtiles[mighty[2][i][0],mighty[2][i][1]].color(45)
-                                            dtiles[mighty[2][i][0],mighty[2][i][1]].deactivate()
-                                            dboxes[mighty[2][i][0],mighty[2][i][1]].show()
-                                            if dboxes[mighty[2][i][0],mighty[2][i][1]].label() != None :
-                                                dnumcl[mighty[2][i][0],mighty[2][i][1]].activate()
+                                        if d_master[mighty[2][i][0],mighty[2][i][1]] != 9 :
+                                            d_master[mighty[2][i][0],mighty[2][i][1]] = 9
+                                            d_tiles[mighty[2][i][0],mighty[2][i][1]].color(45)
+                                            d_tiles[mighty[2][i][0],mighty[2][i][1]].deactivate()
+                                            d_boxes[mighty[2][i][0],mighty[2][i][1]].show()
+                                            if d_boxes[mighty[2][i][0],mighty[2][i][1]].label() != None :
+                                                d_areaClear[mighty[2][i][0],mighty[2][i][1]].activate()
                             else :
                                 timerclock(True)
                                 fl_message("The cow's botteh")
 
                     elif 2 not in master :
-                        fl_message("Mines"*maxmines)
+                        fl_message("Mines"*maxMines)
 
-                    for i in range(len(clrd)) :
+                    for i in range(len(cleared)) :
                         
-                        if dtiles[clrd[i][0],clrd[i][1]].label() == None :
-                            dmaster[clrd[i][0],clrd[i][1]] = 9
-                            dtiles[clrd[i][0],clrd[i][1]].color(45)
-                            dtiles[clrd[i][0],clrd[i][1]].deactivate()
-                            dboxes[clrd[i][0],clrd[i][1]].show()
-                            if dboxes[clrd[i][0],clrd[i][1]].label() != None :
-                                dnumcl[clrd[i][0],clrd[i][1]].activate()
+                        if d_tiles[cleared[i][0],cleared[i][1]].label() == None :
+                            d_master[cleared[i][0],cleared[i][1]] = 9
+                            d_tiles[cleared[i][0],cleared[i][1]].color(45)
+                            d_tiles[cleared[i][0],cleared[i][1]].deactivate()
+                            d_boxes[cleared[i][0],cleared[i][1]].show()
+                            if d_boxes[cleared[i][0],cleared[i][1]].label() != None :
+                                d_areaClear[cleared[i][0],cleared[i][1]].activate()
                         
-                    clrd = []
+                    cleared = []
 
                     if 0 not in master and 2 not in master :
                         timerclock(True)
-                        mrem.label(f"{maxmines} / {maxmines}")
+                        mrem.label(f"{maxMines} / {maxMines}")
                         fl_message("You da man")
                         won = True
         
         case 3 :
             if wid in tiles :
                 if wid.label() == "F" :
-                    amt -= 1
+                    flagCount -= 1
                     wid.label(None)
                 else :
-                    amt += 1
+                    flagCount += 1
                     wid.label("F")
                     wid.labelcolor(168)
                     wid.labelfont(FL_HELVETICA_BOLD)
                     wid.labelsize(size//2 + size//4)
-                mrem.label(f"{amt} / {maxmines}")
+                mrem.label(f"{flagCount} / {maxMines}")
 
 def timerclock(stop=False) :
     global timer,seconds
@@ -357,60 +357,60 @@ def timerclock(stop=False) :
         timer.label(f"00{seconds}")
     Fl.repeat_timeout(1.0,timerclock)
 
-def vari(sch=1) :
-    global clrd,size,row,col,maxmines,mines,click,won,deadson,nums,gamemode,amt,seconds
-    nums = np.array([])
-    clrd = []
+def allGlobalVariables(sch=1) :
+    global cleared,size,row,col,maxMines,mines,click,won,deadson,surroundingMines,gamemode,flagCount,seconds
+    surroundingMines = np.array([])
+    cleared = []
     match sch :
         case 1 :
             size = 64
             row = 9
             col = 9
-            maxmines = 10
+            maxMines = 10
         case 2 :
             size = 40
             row = 16
             col = 16
-            maxmines = 40
+            maxMines = 40
         case 3 :
             size = 40
             row = 16
             col = 30
-            maxmines = 99
+            maxMines = 99
     gamemode = sch
     mines = []
     mastermake()
     click = 0
-    amt = 0
+    flagCount = 0
     won = False
     seconds = 0
 
 def reset() :
-    global tiles,boxes,numcl,timer
+    global tiles,boxes,areaClear,timer
     for but in range(tiles.size) :
         Fl.delete_widget(tiles[but])
         Fl.delete_widget(boxes[but])
-        Fl.delete_widget(numcl[but])
+        Fl.delete_widget(areaClear[but])
     Fl.remove_timeout(timerclock)
     timer.label("000")
 
 def game(wid,sch=1) :
-    global size,maxmines,row,col,sweeper,gamemode
+    global size,maxMines,row,col,sweeper,gamemode
     if sch == 0 :
         sch = gamemode
     reset()
-    vari(sch)
+    allGlobalVariables(sch)
     sweeper.begin()
     sweeper.resize(0,0,size*col,size*row + 32)
     mode.resize(0,0,sweeper.w(),32)
-    mrem.resize(sweeper.w(),0,(size*2)+size//2 + size//4,30)
-    mrem.label(f"0 / {maxmines}")
+    mrem.resize(sweeper.w(),0,(size*2)+size//2 + size//4,28)
+    mrem.label(f"0 / {maxMines}")
     timer.label("000")
     makeboard()
     
     sweeper.end()
 
-vari()
+allGlobalVariables()
 
 sweeper = Fl_Window(size*col,size*row + 32,"Minesweeper")
 sweeper.begin()
@@ -421,12 +421,12 @@ mode.add("Difficulty/Beginner",0,game,1)
 mode.add("Difficulty/Intermediate",0,game,2)
 mode.add("Difficulty/Expert",0,game,3)
 
-mrem = Fl_Box(sweeper.w(),0,(size*2)+size//2 + size//4,30)
-mrem.label(f"0 / {maxmines}")
+mrem = Fl_Box(sweeper.w(),0,(size*2)+size//2 + size//4,28)
+mrem.label(f"0 / {maxMines}")
 mrem.labelsize(32)
 mrem.align(FL_ALIGN_LEFT)
 
-timer = Fl_Box(size + size//8,0,(size*2)+size//2 + size//4,30)
+timer = Fl_Box(size + size//8,0,(size*2)+size//2 + size//4,28)
 timer.label("000")
 timer.labelsize(32)
 timer.align(FL_ALIGN_CENTER)
