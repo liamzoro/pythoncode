@@ -2,6 +2,7 @@ from fltk import *
 import random
 import time
 import pickle
+import os
 
 class Blinken(Fl_Window) :
     masterSequence = []
@@ -12,6 +13,7 @@ class Blinken(Fl_Window) :
     allChosenButtons = []
     skipOptions = False
     isRecordsShowing = False
+    pathRecords = os.path.expanduser("~/Documents/.ssrecords.pickle")
 
     def __init__(self,width,height,title) :
         super().__init__(width,height,title)
@@ -24,13 +26,13 @@ class Blinken(Fl_Window) :
         self.buttonBackground.color(FL_BLACK)
         self.buttonBackground.labelsize(height//8)
         self.buttonBackground.labelcolor(7)
-        
+
         self.buttonYellow = Fl_Button(height//8,
                                       height//6,
                                       self.buttonBackground.w()//2 - height//16,
                                       self.buttonBackground.h()//2 - height//16,
                                       "")
-        self.buttonYellow.color(94)
+        self.buttonYellow.color(93)
 
         self.buttonRed = Fl_Button(height//8 + self.buttonBackground.w()//2 + height//16,
                                    height//6,
@@ -51,10 +53,10 @@ class Blinken(Fl_Window) :
                                      self.buttonBackground.w()//2 - height//16,
                                      self.buttonBackground.h()//2 - height//16,
                                      "   ")
-        self.buttonGreen.color(62)
+        self.buttonGreen.color(61)
 
         self.buttons = [self.buttonYellow,self.buttonRed,self.buttonBlue,self.buttonGreen]
-        
+
         for but in range(len(self.buttons)) :
             self.buttons[but].callback(self.handleClick)
             self.buttons[but].box(FL_ENGRAVED_BOX)
@@ -71,13 +73,19 @@ class Blinken(Fl_Window) :
         self.gameOptions.color(0)
         self.gameOptions.textcolor(7)
 
-        self.buttonColors = [3,128,220,FL_GREEN,94,80,176,62]
+        self.buttonColors = [3,128,220,FL_GREEN,93,80,176,60]
 
         self.records = Fl_Browser(0,self.gameOptions.h(),width,height - self.gameOptions.h())
         self.updateRecords()
         self.records.color(0)
         self.records.textcolor(7)
         self.records.hide()
+
+        self.currentScore = Fl_Box(width,0,0,24)
+        self.currentScore.label("00")
+        self.currentScore.labelcolor(7)
+        self.currentScore.labelsize(22)
+        self.currentScore.align(FL_ALIGN_LEFT)
 
         self.end()
 
@@ -96,13 +104,13 @@ class Blinken(Fl_Window) :
         if Blinken.userSequence != Blinken.masterSequence[:len(Blinken.userSequence)] :
             fl_message("Stinker input")
             try :
-                with open("ssrecords.pickle","rb") as recordsFile :
+                with open(Blinken.pathRecords,"rb") as recordsFile :
                     recordsList = list(pickle.load(recordsFile))
                     recordsList.append(len(Blinken.masterSequence) - Blinken.patternAdditions)
-            except FileNotFoundError,EOFError:
+            except (FileNotFoundError,EOFError):
                 recordsList = [len(Blinken.masterSequence) - Blinken.patternAdditions]
 
-            with open("ssrecords.pickle","wb") as recordsFile :
+            with open(Blinken.pathRecords,"wb") as recordsFile :
                 recordsList.sort(reverse=True)
                 pickle.dump(recordsList,recordsFile)
             Blinken.masterSequence = []
@@ -114,6 +122,8 @@ class Blinken(Fl_Window) :
             Blinken.userSequence = []
             Blinken.sequenceStarted = False
             self.simpleCountdown()
+            print((lambda score=Blinken.masterSequence: f"0{score}" if score<10 else f"{score}")())
+            self.currentScore.label(lambda score: f"0{len(masterSequence)}" if score<10 else f"{len(masterSequence)}")
             self.runSequenceLoop()
 
     def chooseDifficulty(self,wid,difficulty) :
@@ -136,13 +146,13 @@ class Blinken(Fl_Window) :
             Fl.flush()
             Fl.check()
             time.sleep(0.5)
-    
+
     def beginSequence(self,wid) :
         if Blinken.skipOptions :
             return
         Blinken.masterSequence = []
         Blinken.sequenceStarted = False
-        
+
         match Blinken.gameDifficulty :
             case 2 :
                 Blinken.patternAdditions = 4
@@ -150,7 +160,7 @@ class Blinken(Fl_Window) :
                 Blinken.patternAdditions = 2
             case 0 :
                 Blinken.patternAdditions = 1
-        
+
         self.simpleCountdown()
         self.runSequenceLoop()
 
@@ -192,15 +202,15 @@ class Blinken(Fl_Window) :
     def updateRecords(self) :
         self.records.clear()
         try :
-            with open("ssrecords.pickle","rb") as recordsFile :
+            with open(Blinken.pathRecords,"rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
                 for rec in recordsList :
                     self.records.add(str(rec))
-        except FileNotFoundError,EOFError :
-            None
+        except (FileNotFoundError,EOFError) :
+            print("whereisitthough")
 
-ligma = Blinken(512,256,"LirmaBlinken")
-ligma.show()
+simonsays = Blinken(512,256,"Blinken")
+simonsays.show()
 
 Fl.visible_focus(0)
 Fl.run()
