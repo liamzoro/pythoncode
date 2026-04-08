@@ -11,6 +11,7 @@ class Blinken(Fl_Window) :
     patternAdditions = 1
     allChosenButtons = []
     skipOptions = False
+    isRecordsShowing = False
 
     def __init__(self,width,height,title) :
         super().__init__(width,height,title)
@@ -65,11 +66,18 @@ class Blinken(Fl_Window) :
         self.gameOptions.add("Difficulty/Normal",0,self.chooseDifficulty,0)
         self.gameOptions.add("Difficulty/Hard",0,self.chooseDifficulty,1)
         self.gameOptions.add("Difficulty/Extreme",0,self.chooseDifficulty,2)
+        self.gameOptions.add("Records",0,self.showRecords)
         self.gameOptions.box(FL_ENGRAVED_BOX)
         self.gameOptions.color(0)
         self.gameOptions.textcolor(7)
 
         self.buttonColors = [3,128,220,FL_GREEN,94,80,176,62]
+
+        self.records = Fl_Browser(0,self.gameOptions.h(),width,height - self.gameOptions.h())
+        self.updateRecords()
+        self.records.color(0)
+        self.records.textcolor(7)
+        self.records.hide()
 
         self.end()
 
@@ -87,13 +95,19 @@ class Blinken(Fl_Window) :
 
         if Blinken.userSequence != Blinken.masterSequence[:len(Blinken.userSequence)] :
             fl_message("Stinker input")
-            with open("ssrecords.pickle","rb") as recordsFile :
-                recordsList = list(pickle.load(recordsFile))
-                recordsList.append(len(Blinken.masterSequence) - patternAdditions)
+            try :
+                with open("ssrecords.pickle","rb") as recordsFile :
+                    recordsList = list(pickle.load(recordsFile))
+                    recordsList.append(len(Blinken.masterSequence) - Blinken.patternAdditions)
+            except FileNotFoundError,EOFError:
+                recordsList = [len(Blinken.masterSequence) - Blinken.patternAdditions]
+
             with open("ssrecords.pickle","wb") as recordsFile :
+                recordsList.sort(reverse=True)
                 pickle.dump(recordsList,recordsFile)
             Blinken.masterSequence = []
             Blinken.userSequence = []
+            self.updateRecords()
             return
 
         elif len(Blinken.userSequence) == len(Blinken.masterSequence) :
@@ -166,9 +180,27 @@ class Blinken(Fl_Window) :
         self.gameOptions.textcolor(7)
         self.redraw()
 
+    def showRecords(self,wid) :
+        if not Blinken.isRecordsShowing :
+            self.records.show()
+            Blinken.isRecordsShowing = True
+        else :
+            self.records.hide()
+            Blinken.isRecordsShowing = False
+        self.redraw()
+
+    def updateRecords(self) :
+        self.records.clear()
+        try :
+            with open("ssrecords.pickle","rb") as recordsFile :
+                recordsList = list(pickle.load(recordsFile))
+                for rec in recordsList :
+                    self.records.add(str(rec))
+        except FileNotFoundError,EOFError :
+            None
+
 ligma = Blinken(512,256,"LirmaBlinken")
 ligma.show()
 
-#Fl.background(33,32,33)
 Fl.visible_focus(0)
 Fl.run()
