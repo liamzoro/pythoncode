@@ -3,20 +3,24 @@ import random
 import time
 import pickle
 import os
+from tkinter import Tk
 
 class Blinken(Fl_Window) :
-    masterSequence = []
-    userSequence = []
-    sequenceStarted = False
-    gameDifficulty = 0
-    patternAdditions = 1
-    allChosenButtons = []
-    skipOptions = False
-    isRecordsShowing = False
     pathRecords = os.path.expanduser("~/Documents/.ssrecords.pickle")
+    resolutionFinder = Tk()
+    defaultWidth = resolutionFinder.winfo_screenwidth()//2
+    defaultHeight = resolutionFinder.winfo_screenheight()//2
 
-    def __init__(self,width,height,title) :
+    def __init__(self,width=defaultWidth,height=defaultHeight,title="window_title") :
         super().__init__(width,height,title)
+
+        self.masterSequence = []
+        self.userSequence = []
+        self.sequenceStarted = False
+        self.gameDifficulty = 0
+        self.patternAdditions = 1
+        self.skipOptions = False
+        self.isRecordsShowing = False
 
         self.begin()
         self.color(fl_rgb_color(33,32,33))
@@ -26,6 +30,9 @@ class Blinken(Fl_Window) :
         self.buttonBackground.color(FL_BLACK)
         self.buttonBackground.labelsize(height//8)
         self.buttonBackground.labelcolor(7)
+
+        buttonSize = [self.buttonBackground.w()//2 - height//32,
+                      self.buttonBackground.h()//2 - height//32]
 
         self.buttonYellow = Fl_Button(height//8,
                                       height//6,
@@ -90,56 +97,56 @@ class Blinken(Fl_Window) :
         self.end()
 
     def handleClick(self,wid) :
-        if not Blinken.sequenceStarted :
+        if not self.sequenceStarted :
             return
         elif len(wid.label()) == 3 :
-            Blinken.userSequence.append(3)
+            self.userSequence.append(3)
         elif len(wid.label()) == 2 :
-            Blinken.userSequence.append(2)
+            self.userSequence.append(2)
         elif len(wid.label()) == 1 :
-            Blinken.userSequence.append(1)
+            self.userSequence.append(1)
         else :
-            Blinken.userSequence.append(0)
+            self.userSequence.append(0)
 
-        if Blinken.userSequence != Blinken.masterSequence[:len(Blinken.userSequence)] :
+        if self.userSequence != self.masterSequence[:len(self.userSequence)] :
             fl_message("Stinker input")
             try :
                 with open(Blinken.pathRecords,"rb") as recordsFile :
                     recordsList = list(pickle.load(recordsFile))
-                    recordsList.append(len(Blinken.masterSequence) - Blinken.patternAdditions)
+                    recordsList.append(len(self.masterSequence) - self.patternAdditions)
             except (FileNotFoundError,EOFError):
-                recordsList = [len(Blinken.masterSequence) - Blinken.patternAdditions]
+                recordsList = [len(self.masterSequence) - self.patternAdditions]
 
             with open(Blinken.pathRecords,"wb") as recordsFile :
                 recordsList.sort(reverse=True)
                 pickle.dump(recordsList,recordsFile)
-            Blinken.masterSequence = []
-            Blinken.userSequence = []
+            self.masterSequence = []
+            self.userSequence = []
             self.updateRecords()
             return
 
-        elif len(Blinken.userSequence) == len(Blinken.masterSequence) :
-            Blinken.userSequence = []
-            Blinken.sequenceStarted = False
+        elif len(self.userSequence) == len(self.masterSequence) :
+            self.userSequence = []
+            self.sequenceStarted = False
+            self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\
+                    (len(self.masterSequence)//self.patternAdditions))
             self.simpleCountdown()
-            print((lambda score=Blinken.masterSequence: f"0{score}" if score<10 else f"{score}")())
-            self.currentScore.label(lambda score: f"0{len(masterSequence)}" if score<10 else f"{len(masterSequence)}")
             self.runSequenceLoop()
 
     def chooseDifficulty(self,wid,difficulty) :
-        if Blinken.skipOptions :
+        if self.skipOptions :
             return
         match difficulty :
             case 2 :
-                Blinken.gameDifficulty = 2
+                self.gameDifficulty = 2
             case 1 :
-                Blinken.gameDifficulty = 1
+                self.gameDifficulty = 1
             case 0 :
-                Blinken.gameDifficulty = 0
+                self.gameDifficulty = 0
 
     def simpleCountdown(self) :
         self.gameOptions.textcolor(40)
-        Blinken.skipOptions = True
+        self.skipOptions = True
         for period in range(3,-1,-1) :
             self.buttonBackground.label("."*period)
             self.redraw()
@@ -148,31 +155,32 @@ class Blinken(Fl_Window) :
             time.sleep(0.5)
 
     def beginSequence(self,wid) :
-        if Blinken.skipOptions :
+        if self.isRecordsShowing :
+            self.showRecords()
             return
-        Blinken.masterSequence = []
-        Blinken.sequenceStarted = False
+        elif self.skipOptions :
+            return
+        self.masterSequence = []
+        self.sequenceStarted = False
 
-        match Blinken.gameDifficulty :
+        match self.gameDifficulty :
             case 2 :
-                Blinken.patternAdditions = 4
+                self.patternAdditions = 4
             case 1 :
-                Blinken.patternAdditions = 2
+                self.patternAdditions = 2
             case 0 :
-                Blinken.patternAdditions = 1
+                self.patternAdditions = 1
 
         self.simpleCountdown()
         self.runSequenceLoop()
 
     def runSequenceLoop(self) :
-
-        for i in range(len(Blinken.masterSequence) + Blinken.patternAdditions) :
-            if i + 1 > len(Blinken.masterSequence) :
+        for i in range(len(self.masterSequence) + self.patternAdditions) :
+            if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
-                Blinken.allChosenButtons.append(chosenButton)
-                Blinken.masterSequence.append(chosenButton)
+                self.masterSequence.append(chosenButton)
             else :
-                chosenButton = Blinken.masterSequence[i]
+                chosenButton = self.masterSequence[i]
 
             self.buttons[chosenButton].color(self.buttonColors[chosenButton])
             self.redraw()
@@ -183,20 +191,20 @@ class Blinken(Fl_Window) :
             self.redraw()
             Fl.flush()
             Fl.check()
-            time.sleep(0.5)
+            time.sleep(0.1)
 
-        Blinken.sequenceStarted = True
-        Blinken.skipOptions = False
+        self.sequenceStarted = True
+        self.skipOptions = False
         self.gameOptions.textcolor(7)
         self.redraw()
 
-    def showRecords(self,wid) :
-        if not Blinken.isRecordsShowing :
+    def showRecords(self,wid=None) :
+        if not self.isRecordsShowing :
             self.records.show()
-            Blinken.isRecordsShowing = True
+            self.isRecordsShowing = True
         else :
             self.records.hide()
-            Blinken.isRecordsShowing = False
+            self.isRecordsShowing = False
         self.redraw()
 
     def updateRecords(self) :
@@ -204,12 +212,13 @@ class Blinken(Fl_Window) :
         try :
             with open(Blinken.pathRecords,"rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
+                recordsList = list(filter(lambda r: r > 0,sorted(recordsList,reverse=True)))
                 for rec in recordsList :
                     self.records.add(str(rec))
         except (FileNotFoundError,EOFError) :
-            print("whereisitthough")
+            None
 
-simonsays = Blinken(512,256,"Blinken")
+simonsays = Blinken(title="Blinken")
 simonsays.show()
 
 Fl.visible_focus(0)
