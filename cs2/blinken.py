@@ -2,11 +2,12 @@ from fltk import *
 import random
 import time
 import pickle
-import os
+from os.path import expanduser
 from tkinter import Tk
 
 class Blinken(Fl_Window) :
-    pathRecords = os.path.expanduser("~/Documents/.ssrecords.pickle")
+    pathRecords = expanduser("~/Documents/.ssrecords.pickle")
+    difficultyNames = ("Normal","Hard","Extreme")
     resolutionFinder = Tk()
     defaultWidth = resolutionFinder.winfo_screenwidth()//2
     defaultHeight = resolutionFinder.winfo_screenheight()//2
@@ -25,7 +26,7 @@ class Blinken(Fl_Window) :
         self.begin()
         self.color(fl_rgb_color(33,32,33))
 
-        self.buttonBackground = Fl_Box(height//8,height//6,width - (height//8)*2,height - (height//8)*2)
+        self.buttonBackground = Fl_Box(height//8,height//8 + 12,width - (height//8)*2,height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
         self.buttonBackground.color(FL_BLACK)
         self.buttonBackground.labelsize(height//8)
@@ -33,36 +34,46 @@ class Blinken(Fl_Window) :
 
         buttonSize = [self.buttonBackground.w()//2 - height//32,
                       self.buttonBackground.h()//2 - height//32]
+        buttonPosition = [self.buttonBackground.w()//2 + height//32,
+                          self.buttonBackground.h()//2 + height//32]
 
         self.buttonYellow = Fl_Button(height//8,
-                                      height//6,
-                                      self.buttonBackground.w()//2 - height//16,
-                                      self.buttonBackground.h()//2 - height//16,
+                                      height//8 + 12,
+                                      buttonSize[0],
+                                      buttonSize[1],
                                       "")
         self.buttonYellow.color(93)
 
-        self.buttonRed = Fl_Button(height//8 + self.buttonBackground.w()//2 + height//16,
-                                   height//6,
-                                   self.buttonBackground.w()//2 - height//16,
-                                   self.buttonBackground.h()//2 - height//16,
+        self.buttonRed = Fl_Button(height//8 + buttonPosition[0],
+                                   height//8 + 12,
+                                   buttonSize[0],
+                                   buttonSize[1],
                                    " ")
         self.buttonRed.color(80)
 
         self.buttonBlue = Fl_Button(height//8,
-                                    height//6 + self.buttonBackground.h()//2 + height//16,
-                                    self.buttonBackground.w()//2 - height//16,
-                                    self.buttonBackground.h()//2 - height//16,
+                                    height//8 + 12 + buttonPosition[1],
+                                    buttonSize[0],
+                                    buttonSize[1],
                                     "  ")
         self.buttonBlue.color(176)
 
-        self.buttonGreen = Fl_Button(height//8 + self.buttonBackground.w()//2 + height//16,
-                                     height//6 + self.buttonBackground.h()//2 + height//16,
-                                     self.buttonBackground.w()//2 - height//16,
-                                     self.buttonBackground.h()//2 - height//16,
+        self.buttonGreen = Fl_Button(height//8 + buttonPosition[0],
+                                     height//8 + 12 + buttonPosition[1],
+                                     buttonSize[0],
+                                     buttonSize[1],
                                      "   ")
         self.buttonGreen.color(61)
 
         self.buttons = [self.buttonYellow,self.buttonRed,self.buttonBlue,self.buttonGreen]
+
+        self.countdown = Fl_Box(height//8 + buttonSize[0],
+                                height//8 + 12 + buttonSize[1],
+                                height//16,
+                                height//16)
+        self.countdown.label("")
+        self.countdown.labelsize(height//16)
+        self.countdown.labelcolor(7)
 
         for but in range(len(self.buttons)) :
             self.buttons[but].callback(self.handleClick)
@@ -83,10 +94,10 @@ class Blinken(Fl_Window) :
         self.buttonColors = [3,128,220,FL_GREEN,93,80,176,60]
 
         self.records = Fl_Browser(0,self.gameOptions.h(),width,height - self.gameOptions.h())
-        self.updateRecords()
         self.records.color(0)
         self.records.textcolor(7)
         self.records.hide()
+        self.updateRecords()
 
         self.currentScore = Fl_Box(width,0,0,24)
         self.currentScore.label("00")
@@ -110,19 +121,8 @@ class Blinken(Fl_Window) :
 
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
             fl_message("Stinker input")
-            try :
-                with open(Blinken.pathRecords,"rb") as recordsFile :
-                    recordsList = list(pickle.load(recordsFile))
-                    recordsList.append(len(self.masterSequence) - self.patternAdditions)
-            except (FileNotFoundError,EOFError):
-                recordsList = [len(self.masterSequence) - self.patternAdditions]
-
-            with open(Blinken.pathRecords,"wb") as recordsFile :
-                recordsList.sort(reverse=True)
-                pickle.dump(recordsList,recordsFile)
-            self.masterSequence = []
-            self.userSequence = []
-            self.updateRecords()
+            self.currentScore.label("00")
+            self.writeRecords()
             return
 
         elif len(self.userSequence) == len(self.masterSequence) :
@@ -147,12 +147,13 @@ class Blinken(Fl_Window) :
     def simpleCountdown(self) :
         self.gameOptions.textcolor(40)
         self.skipOptions = True
-        for period in range(3,-1,-1) :
-            self.buttonBackground.label("."*period)
+        for period in range(3,0,-1) :
+            self.countdown.label("."*period)
             self.redraw()
             Fl.flush()
             Fl.check()
             time.sleep(0.5)
+        self.countdown.label("")
 
     def beginSequence(self,wid) :
         if self.isRecordsShowing :
@@ -160,6 +161,7 @@ class Blinken(Fl_Window) :
             return
         elif self.skipOptions :
             return
+        self.currentScore.label("00")
         self.masterSequence = []
         self.sequenceStarted = False
 
@@ -202,17 +204,34 @@ class Blinken(Fl_Window) :
         if not self.isRecordsShowing :
             self.records.show()
             self.isRecordsShowing = True
+            self.updateRecords()
         else :
             self.records.hide()
             self.isRecordsShowing = False
         self.redraw()
+
+    def writeRecords(self) :
+        try :
+            with open(Blinken.pathRecords,"rb") as recordsFile :
+                recordsList = list(pickle.load(recordsFile))
+                recordsList.append((len(self.masterSequence) - self.patternAdditions,
+                                    Blinken.difficultyNames[self.gameDifficulty]))
+        except (FileNotFoundError,EOFError):
+            recordsList = [(len(self.masterSequence) - self.patternAdditions,
+                            Blinken.difficultyNames[self.gameDifficulty])]
+
+        with open(Blinken.pathRecords,"wb") as recordsFile :
+            recordsList.sort(reverse=True)
+            pickle.dump(recordsList,recordsFile)
+        self.masterSequence = []
+        self.userSequence = []
 
     def updateRecords(self) :
         self.records.clear()
         try :
             with open(Blinken.pathRecords,"rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
-                recordsList = list(filter(lambda r: r > 0,sorted(recordsList,reverse=True)))
+                recordsList = list(filter(lambda r: r[0] > 0,recordsList))
                 for rec in recordsList :
                     self.records.add(str(rec))
         except (FileNotFoundError,EOFError) :
@@ -223,3 +242,11 @@ simonsays.show()
 
 Fl.visible_focus(0)
 Fl.run()
+
+'''
+References:
+[Line(s), Link]
+5 + 9, https://stackoverflow.com/questions/2057045/os-makedirs-doesnt-understand-in-my-path
+227, https://www.geeksforgeeks.org/python/lambda-filter-python-examples/
+128, https://stackoverflow.com/questions/1585322/is-there-a-way-to-perform-if-in-pythons-lambda
+'''
