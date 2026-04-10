@@ -96,6 +96,7 @@ class Blinken(Fl_Window) :
         self.records = Fl_Browser(0,self.gameOptions.h(),width,height - self.gameOptions.h())
         self.records.color(0)
         self.records.textcolor(7)
+        self.records.textsize((lambda s: s[0]//32 if s[0] < s[1] else s[1]//32)((width,height))) # lots and lots of lambdas to come
         self.records.hide()
         self.updateRecords()
 
@@ -201,6 +202,8 @@ class Blinken(Fl_Window) :
         self.redraw()
 
     def showRecords(self,wid=None) :
+        if self.skipOptions :
+            return
         if not self.isRecordsShowing :
             self.records.show()
             self.isRecordsShowing = True
@@ -211,17 +214,19 @@ class Blinken(Fl_Window) :
         self.redraw()
 
     def writeRecords(self) :
+        calculatedScore = (len(self.masterSequence) - self.patternAdditions)//self.patternAdditions
         try :
             with open(Blinken.pathRecords,"rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
-                recordsList.append((len(self.masterSequence) - self.patternAdditions,
+                recordsList.append((calculatedScore,
                                     Blinken.difficultyNames[self.gameDifficulty]))
         except (FileNotFoundError,EOFError):
-            recordsList = [(len(self.masterSequence) - self.patternAdditions,
+            recordsList = [(calculatedScore,
                             Blinken.difficultyNames[self.gameDifficulty])]
 
         with open(Blinken.pathRecords,"wb") as recordsFile :
             recordsList.sort(reverse=True)
+            recordsList = sorted(recordsList,key=lambda r: r[1])
             pickle.dump(recordsList,recordsFile)
         self.masterSequence = []
         self.userSequence = []
@@ -231,9 +236,28 @@ class Blinken(Fl_Window) :
         try :
             with open(Blinken.pathRecords,"rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
-                recordsList = list(filter(lambda r: r[0] > 0,recordsList))
-                for rec in recordsList :
-                    self.records.add(str(rec))
+            recordsList = list(filter(lambda r: r[0] > 0,recordsList))
+
+            extremeRecords = ["- Extreme"]
+            hardRecords = ["- Hard"]
+            normalRecords = ["- Normal"]
+
+            for r in recordsList :
+                if "Extreme" in r :
+                    extremeRecords.append(r)
+                elif "Hard" in r :
+                    hardRecords.append(r)
+                elif "Normal" in r :
+                    normalRecords.append(r)
+            recordsList = extremeRecords + hardRecords + normalRecords
+
+            for rec in recordsList :
+                if isinstance(rec,str) :
+                    self.records.add("")
+                    self.records.add(rec)
+                    continue
+                self.records.add(str(rec[0]))
+            self.records.remove(1)
         except (FileNotFoundError,EOFError) :
             None
 
@@ -248,5 +272,6 @@ References:
 [Line(s), Link]
 5 + 9, https://stackoverflow.com/questions/2057045/os-makedirs-doesnt-understand-in-my-path
 227, https://www.geeksforgeeks.org/python/lambda-filter-python-examples/
+228, https://stackoverflow.com/questions/10695139/sort-a-list-of-tuples-by-2nd-item-integer-value
 128, https://stackoverflow.com/questions/1585322/is-there-a-way-to-perform-if-in-pythons-lambda
 '''
