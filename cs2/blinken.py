@@ -4,9 +4,11 @@ import time
 import pickle
 from os.path import expanduser
 from tkinter import Tk
+from subprocess import Popen
 
 class Blinken(Fl_Window) :
     pathRecords = expanduser("~/Documents/.ssrecords.pickle")
+    soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3")
     difficultyNames = ("Normal","Hard","Extreme")
     resolutionFinder = Tk()
     defaultWidth = resolutionFinder.winfo_screenwidth()//2
@@ -112,12 +114,16 @@ class Blinken(Fl_Window) :
         if not self.sequenceStarted :
             return
         elif len(wid.label()) == 3 :
+            Popen(["paplay",soundEffects[3]])
             self.userSequence.append(3)
         elif len(wid.label()) == 2 :
+            Popen(["paplay",soundEffects[2]])
             self.userSequence.append(2)
         elif len(wid.label()) == 1 :
+            Popen(["paplay",soundEffects[1]])
             self.userSequence.append(1)
         else :
+            Popen(["paplay",soundEffects[0]])
             self.userSequence.append(0)
 
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
@@ -181,6 +187,7 @@ class Blinken(Fl_Window) :
         for i in range(len(self.masterSequence) + self.patternAdditions) :
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
+                Popen(["paplay",soundEffects[chosenButton]])
                 self.masterSequence.append(chosenButton)
             else :
                 chosenButton = self.masterSequence[i]
