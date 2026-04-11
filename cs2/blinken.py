@@ -31,13 +31,11 @@ class Blinken(Fl_Window) :
         self.buttonBackground = Fl_Box(height//8,height//8 + 12,width - (height//8)*2,height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
         self.buttonBackground.color(FL_BLACK)
-        self.buttonBackground.labelsize(height//8)
-        self.buttonBackground.labelcolor(7)
 
-        buttonSize = [self.buttonBackground.w()//2 - height//32,
-                      self.buttonBackground.h()//2 - height//32]
-        buttonPosition = [self.buttonBackground.w()//2 + height//32,
-                          self.buttonBackground.h()//2 + height//32]
+        buttonSize = (self.buttonBackground.w()//2 - height//32,
+                      self.buttonBackground.h()//2 - height//32)
+        buttonPosition = (self.buttonBackground.w()//2 + height//32,
+                          self.buttonBackground.h()//2 + height//32)
 
         self.buttonYellow = Fl_Button(height//8,
                                       height//8 + 12,
@@ -73,7 +71,6 @@ class Blinken(Fl_Window) :
                                 height//8 + 12 + buttonSize[1],
                                 height//16,
                                 height//16)
-        self.countdown.label("")
         self.countdown.labelsize(height//16)
         self.countdown.labelcolor(7)
 
@@ -114,16 +111,16 @@ class Blinken(Fl_Window) :
         if self.sequenceStarted is False :
             return
         elif len(wid.label()) == 3 :
-            self.playsound(3)
+            self.playSound(3)
             self.userSequence.append(3)
         elif len(wid.label()) == 2 :
-            self.playsound(2)
+            self.playSound(2)
             self.userSequence.append(2)
         elif len(wid.label()) == 1 :
-            self.playsound(1)
+            self.playSound(1)
             self.userSequence.append(1)
         else :
-            self.playsound(0)
+            self.playSound(0)
             self.userSequence.append(0)
 
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
@@ -160,7 +157,7 @@ class Blinken(Fl_Window) :
             Fl.flush()
             Fl.check()
             time.sleep(0.5)
-        self.countdown.label("")
+        self.countdown.label(None)
 
     def beginSequence(self,wid) :
         if self.isRecordsShowing is True :
@@ -187,11 +184,11 @@ class Blinken(Fl_Window) :
         for i in range(len(self.masterSequence) + self.patternAdditions) :
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
-                self.playSound(chosenButton)
                 self.masterSequence.append(chosenButton)
             else :
                 chosenButton = self.masterSequence[i]
 
+            self.playSound(chosenButton)
             self.buttons[chosenButton].color(self.buttonColors[chosenButton])
             self.redraw()
             Fl.flush()
