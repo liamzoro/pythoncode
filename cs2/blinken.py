@@ -6,6 +6,7 @@ from os.path import expanduser
 from tkinter import Tk
 from subprocess import Popen
 
+
 class Blinken(Fl_Window) :
     pathRecords = expanduser("~/Documents/.ssrecords.pickle")
     soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3")
@@ -127,6 +128,8 @@ class Blinken(Fl_Window) :
             fl_message("Stinker input")
             self.currentScore.label("00")
             self.writeRecords()
+            self.masterSequence = []
+            self.userSequence = []
             return
 
         elif len(self.userSequence) == len(self.masterSequence) :
@@ -232,8 +235,6 @@ class Blinken(Fl_Window) :
             recordsList.sort(reverse=True)
             recordsList = sorted(recordsList,key=lambda r: r[1])
             pickle.dump(recordsList,recordsFile)
-        self.masterSequence = []
-        self.userSequence = []
 
     def updateRecords(self) :
         self.records.clear()
@@ -266,7 +267,7 @@ class Blinken(Fl_Window) :
             None
 
     def playSound(self,sound) :
-        Popen(["paplay",Blinken.soundEffects[sound]]) # cleaner and more readable than typing all that
+        Popen(["paplay",Blinken.soundEffects[sound]]) # cleaner and more readable than typing that a bunch
 
 
 simonsays = Blinken(title="Blinken")
@@ -274,6 +275,7 @@ simonsays.show()
 
 Fl.visible_focus(0)
 Fl.run()
+
 
 '''
 References:
