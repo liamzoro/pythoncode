@@ -111,19 +111,19 @@ class Blinken(Fl_Window) :
         self.end()
 
     def handleClick(self,wid) :
-        if not self.sequenceStarted :
+        if self.sequenceStarted is False :
             return
         elif len(wid.label()) == 3 :
-            Popen(["paplay",soundEffects[3]])
+            self.playsound(3)
             self.userSequence.append(3)
         elif len(wid.label()) == 2 :
-            Popen(["paplay",soundEffects[2]])
+            self.playsound(2)
             self.userSequence.append(2)
         elif len(wid.label()) == 1 :
-            Popen(["paplay",soundEffects[1]])
+            self.playsound(1)
             self.userSequence.append(1)
         else :
-            Popen(["paplay",soundEffects[0]])
+            self.playsound(0)
             self.userSequence.append(0)
 
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
@@ -141,7 +141,7 @@ class Blinken(Fl_Window) :
             self.runSequenceLoop()
 
     def chooseDifficulty(self,wid,difficulty) :
-        if self.skipOptions :
+        if self.skipOptions is True :
             return
         match difficulty :
             case 2 :
@@ -163,10 +163,10 @@ class Blinken(Fl_Window) :
         self.countdown.label("")
 
     def beginSequence(self,wid) :
-        if self.isRecordsShowing :
+        if self.isRecordsShowing is True :
             self.showRecords()
             return
-        elif self.skipOptions :
+        elif self.skipOptions is True :
             return
         self.currentScore.label("00")
         self.masterSequence = []
@@ -187,7 +187,7 @@ class Blinken(Fl_Window) :
         for i in range(len(self.masterSequence) + self.patternAdditions) :
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
-                Popen(["paplay",soundEffects[chosenButton]])
+                self.playSound(chosenButton)
                 self.masterSequence.append(chosenButton)
             else :
                 chosenButton = self.masterSequence[i]
@@ -209,9 +209,9 @@ class Blinken(Fl_Window) :
         self.redraw()
 
     def showRecords(self,wid=None) :
-        if self.skipOptions :
+        if self.skipOptions is True :
             return
-        if not self.isRecordsShowing :
+        if self.isRecordsShowing is False :
             self.records.show()
             self.isRecordsShowing = True
             self.updateRecords()
@@ -267,6 +267,10 @@ class Blinken(Fl_Window) :
             self.records.remove(1)
         except (FileNotFoundError,EOFError) :
             None
+
+    def playSound(self,sound) :
+        Popen(["paplay",Blinken.soundEffects[sound]]) # cleaner and more readable than typing all that
+
 
 simonsays = Blinken(title="Blinken")
 simonsays.show()
