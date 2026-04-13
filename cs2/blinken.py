@@ -243,26 +243,24 @@ class Blinken(Fl_Window) :
                 recordsList = list(pickle.load(recordsFile))
             recordsList = list(filter(lambda r: r[0] > 0,recordsList))
 
-            extremeRecords = ["- Extreme"]
-            hardRecords = ["- Hard"]
-            normalRecords = ["- Normal"]
+            extremeRecords = ["- Extreme","\n"]
+            hardRecords = ["- Hard","\n"]
+            normalRecords = ["- Normal","\n"]
 
             for r in recordsList :
                 if "Extreme" in r :
-                    extremeRecords.append(r)
+                    extremeRecords.insert(-1,r)
                 elif "Hard" in r :
-                    hardRecords.append(r)
+                    hardRecords.insert(-1,r)
                 elif "Normal" in r :
-                    normalRecords.append(r)
+                    normalRecords.insert(-1,r)
             recordsList = extremeRecords + hardRecords + normalRecords
 
             for rec in recordsList :
                 if isinstance(rec,str) :
-                    self.records.add("")
                     self.records.add(rec)
                     continue
                 self.records.add(str(rec[0]))
-            self.records.remove(1)
         except (FileNotFoundError,EOFError) :
             None
 
