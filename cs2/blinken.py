@@ -9,7 +9,7 @@ from subprocess import Popen
 
 class Blinken(Fl_Window) :
     pathRecords = expanduser("~/Documents/.ssrecords.pickle")
-    soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3")
+    soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3","error.mp3")
     difficultyNames = ("Normal","Hard","Extreme")
     resolutionFinder = Tk()
     defaultWidth = resolutionFinder.winfo_screenwidth()//2
@@ -25,9 +25,13 @@ class Blinken(Fl_Window) :
         self.patternAdditions = 1
         self.skipOptions = False
         self.isRecordsShowing = False
+        self.gameOverTimer = False
 
         self.begin()
         self.color(fl_rgb_color(33,32,33))
+
+        self.buttons = []
+        self.boxes = []
 
         self.buttonBackground = Fl_Box(height//8,height//8 + 12,width - (height//8)*2,height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
@@ -35,51 +39,34 @@ class Blinken(Fl_Window) :
 
         buttonSize = (self.buttonBackground.w()//2 - height//32,
                       self.buttonBackground.h()//2 - height//32)
-        buttonPosition = (self.buttonBackground.w()//2 + height//32,
+        buttonPosition = (0,self.buttonBackground.w()//2 + height//32,
                           self.buttonBackground.h()//2 + height//32)
+        self.buttonColors = [3,128,220,FL_GREEN,93,80,176,60]
 
-        self.buttonYellow = Fl_Button(height//8,
-                                      height//8 + 12,
-                                      buttonSize[0],
-                                      buttonSize[1],
-                                      "")
-        self.buttonYellow.color(93)
-
-        self.buttonRed = Fl_Button(height//8 + buttonPosition[0],
-                                   height//8 + 12,
-                                   buttonSize[0],
-                                   buttonSize[1],
-                                   " ")
-        self.buttonRed.color(80)
-
-        self.buttonBlue = Fl_Button(height//8,
-                                    height//8 + 12 + buttonPosition[1],
-                                    buttonSize[0],
-                                    buttonSize[1],
-                                    "  ")
-        self.buttonBlue.color(176)
-
-        self.buttonGreen = Fl_Button(height//8 + buttonPosition[0],
-                                     height//8 + 12 + buttonPosition[1],
+        for but in range(4) :
+            self.buttons.append(Fl_Button(height//8 + buttonPosition[(but*3)%2],
+                                          height//8 + 12 + buttonPosition[int((but//1.6)*2)],
+                                          buttonSize[0],
+                                          buttonSize[1],
+                                          " "*but))
+            self.boxes.append(Fl_Box(height//8 + buttonPosition[(but*3)%2],
+                                     height//8 + 12 + buttonPosition[int((but//1.6)*2)],
                                      buttonSize[0],
-                                     buttonSize[1],
-                                     "   ")
-        self.buttonGreen.color(61)
+                                     buttonSize[1]))
 
-        self.buttons = [self.buttonYellow,self.buttonRed,self.buttonBlue,self.buttonGreen]
+            self.buttons[but].box(FL_NO_BOX)
+            self.buttons[but].callback(self.handleClick)
+            self.boxes[but].box(FL_ENGRAVED_BOX)
+            self.boxes[but].color(self.buttonColors[but+4])
+            self.resizable(self.buttons[but])
+            self.resizable(self.boxes[but])
 
         self.countdown = Fl_Box(height//8 + buttonSize[0],
-                                height//8 + 12 + buttonSize[1],
-                                height//16,
-                                height//16)
+                        height//8 + 12 + buttonSize[1],
+                        height//16,
+                        height//16)
         self.countdown.labelsize(height//16)
         self.countdown.labelcolor(7)
-
-        for but in range(len(self.buttons)) :
-            self.buttons[but].callback(self.handleClick)
-            self.buttons[but].box(FL_ENGRAVED_BOX)
-            self.resizable(self.buttons[but])
-        self.resizable(self.buttonBackground)
 
         self.gameOptions = Fl_Menu_Bar(0,0,width,24)
         self.gameOptions.add("Begin",FL_ALT | ord("s"),self.beginSequence)
@@ -90,8 +77,6 @@ class Blinken(Fl_Window) :
         self.gameOptions.box(FL_ENGRAVED_BOX)
         self.gameOptions.color(0)
         self.gameOptions.textcolor(7)
-
-        self.buttonColors = [3,128,220,FL_GREEN,93,80,176,60]
 
         self.records = Fl_Browser(0,self.gameOptions.h(),width,height - self.gameOptions.h())
         self.records.color(0)
@@ -105,40 +90,42 @@ class Blinken(Fl_Window) :
         self.currentScore.labelcolor(7)
         self.currentScore.labelsize(22)
         self.currentScore.align(FL_ALIGN_LEFT)
-
+        self.redraw()
         self.end()
 
     def handleClick(self,wid) :
+        button = len(wid.label())
         if self.sequenceStarted is False :
             return
-        elif len(wid.label()) == 3 :
-            self.playSound(3)
+        if self.gameOverTimer is True :
+            self.gameOverTimer = False
+            Fl.remove_timeout(self.gameOver)
+        if button == 3 :
             self.userSequence.append(3)
-        elif len(wid.label()) == 2 :
-            self.playSound(2)
+        elif button == 2 :
             self.userSequence.append(2)
-        elif len(wid.label()) == 1 :
-            self.playSound(1)
+        elif button == 1 :
             self.userSequence.append(1)
         else :
-            self.playSound(0)
             self.userSequence.append(0)
 
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
-            fl_message("Stinker input")
-            self.currentScore.label("00")
-            self.writeRecords()
-            self.masterSequence = []
-            self.userSequence = []
+            self.gameOver(False)
             return
 
-        elif len(self.userSequence) == len(self.masterSequence) :
+        self.playSound(button)
+        Fl.add_timeout(5.0,self.gameOver)
+        self.gameOverTimer = True
+
+        if len(self.userSequence) == len(self.masterSequence) :
             self.userSequence = []
             self.sequenceStarted = False
             self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\
                     (len(self.masterSequence)//self.patternAdditions))
+            Fl.remove_timeout(self.gameOver)
             self.simpleCountdown()
             self.runSequenceLoop()
+        
 
     def chooseDifficulty(self,wid,difficulty) :
         if self.skipOptions is True :
@@ -159,7 +146,7 @@ class Blinken(Fl_Window) :
             self.redraw()
             Fl.flush()
             Fl.check()
-            time.sleep(0.5)
+            time.sleep(0.33)
         self.countdown.label(None)
 
     def beginSequence(self,wid) :
@@ -192,21 +179,23 @@ class Blinken(Fl_Window) :
                 chosenButton = self.masterSequence[i]
 
             self.playSound(chosenButton)
-            self.buttons[chosenButton].color(self.buttonColors[chosenButton])
+            self.boxes[chosenButton].color(self.buttonColors[chosenButton])
             self.redraw()
             Fl.flush()
             Fl.check()
             time.sleep(0.5)
-            self.buttons[chosenButton].color(self.buttonColors[chosenButton+4])
+            self.boxes[chosenButton].color(self.buttonColors[chosenButton+4])
             self.redraw()
             Fl.flush()
             Fl.check()
-            time.sleep(0.1)
+            time.sleep(0.25)
 
         self.sequenceStarted = True
         self.skipOptions = False
         self.gameOptions.textcolor(7)
         self.redraw()
+        self.gameOverTimer = True
+        Fl.add_timeout(5.0,self.gameOver)
 
     def showRecords(self,wid=None) :
         if self.skipOptions is True :
@@ -266,6 +255,18 @@ class Blinken(Fl_Window) :
 
     def playSound(self,sound) :
         Popen(["paplay",Blinken.soundEffects[sound]]) # cleaner and more readable than typing that a bunch
+
+    def gameOver(self,timedOut=True) :
+        self.playSound(4)
+        if timedOut is True :
+            fl_message("Game Over\nTime's Up")
+        else :
+            fl_message("Game Over")
+        self.currentScore.label("00")
+        self.writeRecords()
+        self.masterSequence = []
+        self.userSequence = []
+        self.sequenceStarted = False
 
 
 simonsays = Blinken(title="Blinken")
