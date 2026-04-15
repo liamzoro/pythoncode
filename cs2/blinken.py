@@ -3,7 +3,15 @@ import random
 import time
 import pickle
 from os.path import expanduser
-from tkinter import Tk
+from sys import exit
+try :
+    from tkinter import Tk
+except ModuleNotFoundError as e :
+    fl_message(f"{e}: Dependency Missing <tkinter>")
+    exit()
+except ImportError as e :
+    fl_message(f"{e}: Dependency Missing <tk>")
+    exit()
 from subprocess import Popen
 
 
@@ -31,7 +39,6 @@ class Blinken(Fl_Window) :
         self.color(fl_rgb_color(33,32,33))
 
         self.buttons = []
-        self.boxes = []
 
         self.buttonBackground = Fl_Box(height//8,height//8 + 12,width - (height//8)*2,height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
@@ -49,17 +56,14 @@ class Blinken(Fl_Window) :
                                           buttonSize[0],
                                           buttonSize[1],
                                           " "*but))
-            self.boxes.append(Fl_Box(height//8 + buttonPosition[(but*3)%2],
-                                     height//8 + 12 + buttonPosition[int((but//1.6)*2)],
-                                     buttonSize[0],
-                                     buttonSize[1]))
-
-            self.buttons[but].box(FL_NO_BOX)
+            self.buttons[but].box(FL_ENGRAVED_BOX)
             self.buttons[but].callback(self.handleClick)
-            self.boxes[but].box(FL_ENGRAVED_BOX)
-            self.boxes[but].color(self.buttonColors[but+4])
+            self.buttons[but].color(self.buttonColors[but+4])
+            self.buttons[but].down_color(self.buttonColors[but])
+
+        for but in range(4) :
             self.resizable(self.buttons[but])
-            self.resizable(self.boxes[but])
+        self.resizable(self.buttonBackground)
 
         self.countdown = Fl_Box(height//8 + buttonSize[0],
                         height//8 + 12 + buttonSize[1],
@@ -125,7 +129,7 @@ class Blinken(Fl_Window) :
             Fl.remove_timeout(self.gameOver)
             self.simpleCountdown()
             self.runSequenceLoop()
-        
+
 
     def chooseDifficulty(self,wid,difficulty) :
         if self.skipOptions is True :
@@ -171,7 +175,8 @@ class Blinken(Fl_Window) :
         self.runSequenceLoop()
 
     def runSequenceLoop(self) :
-        for i in range(len(self.masterSequence) + self.patternAdditions) :
+        sequenceLength = len(self.masterSequence) + self.patternAdditions
+        for i in range(sequenceLength) :
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
                 self.masterSequence.append(chosenButton)
@@ -179,16 +184,17 @@ class Blinken(Fl_Window) :
                 chosenButton = self.masterSequence[i]
 
             self.playSound(chosenButton)
-            self.boxes[chosenButton].color(self.buttonColors[chosenButton])
+            self.buttons[chosenButton].color(self.buttonColors[chosenButton])
             self.redraw()
             Fl.flush()
             Fl.check()
             time.sleep(0.5)
-            self.boxes[chosenButton].color(self.buttonColors[chosenButton+4])
+            self.buttons[chosenButton].color(self.buttonColors[chosenButton+4])
             self.redraw()
             Fl.flush()
             Fl.check()
-            time.sleep(0.25)
+            if i != sequenceLength - 1 :
+                time.sleep(0.25)
 
         self.sequenceStarted = True
         self.skipOptions = False
@@ -258,6 +264,8 @@ class Blinken(Fl_Window) :
 
     def gameOver(self,timedOut=True) :
         self.playSound(4)
+        for but in self.buttons :
+            but.value(0)
         if timedOut is True :
             fl_message("Game Over\nTime's Up")
         else :
