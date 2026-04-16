@@ -48,7 +48,7 @@ class Blinken(Fl_Window) :
                       self.buttonBackground.h()//2 - height//32)
         buttonPosition = (0,self.buttonBackground.w()//2 + height//32,
                           self.buttonBackground.h()//2 + height//32)
-        self.buttonColors = [3,128,220,FL_GREEN,93,80,176,60]
+        self.buttonColors = [3,128,220,2,93,80,176,60]
 
         for but in range(4) :
             self.buttons.append(Fl_Button(height//8 + buttonPosition[(but*3)%2],
