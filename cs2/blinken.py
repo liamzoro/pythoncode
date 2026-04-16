@@ -31,7 +31,6 @@ class Blinken(Fl_Window) :
         self.sequenceStarted = False
         self.gameDifficulty = 0
         self.patternAdditions = 1
-        self.skipOptions = False
         self.isRecordsShowing = False
         self.gameOverTimer = False
 
@@ -40,7 +39,9 @@ class Blinken(Fl_Window) :
 
         self.buttons = []
 
-        self.buttonBackground = Fl_Box(height//8,height//8 + 12,width - (height//8)*2,height - (height//8)*2)
+        self.buttonBackground = Fl_Box(height//8,height//8 + 12,
+                                       width - (height//8)*2,
+                                       height - (height//8)*2)
         self.buttonBackground.box(FL_FLAT_BOX)
         self.buttonBackground.color(FL_BLACK)
 
@@ -132,8 +133,6 @@ class Blinken(Fl_Window) :
 
 
     def chooseDifficulty(self,wid,difficulty) :
-        if self.skipOptions is True :
-            return
         match difficulty :
             case 2 :
                 self.gameDifficulty = 2
@@ -142,22 +141,17 @@ class Blinken(Fl_Window) :
             case 0 :
                 self.gameDifficulty = 0
 
-    def simpleCountdown(self) :
-        self.gameOptions.textcolor(40)
-        self.skipOptions = True
-        for period in range(3,0,-1) :
+    def simpleCountdown(self,period=3) :
             self.countdown.label("."*period)
             self.redraw()
             Fl.flush()
             Fl.check()
-            time.sleep(0.33)
-        self.countdown.label(None)
+            if period == 0 :
+                self.runSequenceLoop()
 
     def beginSequence(self,wid) :
         if self.isRecordsShowing is True :
             self.showRecords()
-            return
-        elif self.skipOptions is True :
             return
         self.currentScore.label("00")
         self.masterSequence = []
@@ -172,7 +166,9 @@ class Blinken(Fl_Window) :
                 self.patternAdditions = 1
 
         self.simpleCountdown()
-        self.runSequenceLoop()
+        Fl.add_timeout(0.33,self.simpleCountdown,2)
+        Fl.add_timeout(0.67,self.simpleCountdown,1)
+        Fl.add_timeout(1.0,self.simpleCountdown,0)
 
     def runSequenceLoop(self) :
         sequenceLength = len(self.masterSequence) + self.patternAdditions
@@ -197,15 +193,11 @@ class Blinken(Fl_Window) :
                 time.sleep(0.25)
 
         self.sequenceStarted = True
-        self.skipOptions = False
-        self.gameOptions.textcolor(7)
         self.redraw()
         self.gameOverTimer = True
         Fl.add_timeout(5.0,self.gameOver)
 
     def showRecords(self,wid=None) :
-        if self.skipOptions is True :
-            return
         if self.isRecordsShowing is False :
             self.records.show()
             self.isRecordsShowing = True
