@@ -1,8 +1,6 @@
 from fltk import *
 import random
-import time
 import pickle
-from os.path import expanduser
 from sys import exit
 try :
     from tkinter import Tk
@@ -16,7 +14,6 @@ from subprocess import Popen
 
 
 class Blinken(Fl_Window) :
-    pathRecords = expanduser("~/Documents/.ssrecords.pickle")
     soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3","error.mp3")
     difficultyNames = ("Normal","Hard","Extreme")
     resolutionFinder = Tk()
@@ -33,6 +30,7 @@ class Blinken(Fl_Window) :
         self.patternAdditions = 1
         self.isRecordsShowing = False
         self.gameOverTimer = False
+        self.sequenceLength = 0
 
         self.begin()
         self.color(fl_rgb_color(33,32,33))
@@ -61,10 +59,6 @@ class Blinken(Fl_Window) :
             self.buttons[but].callback(self.handleClick)
             self.buttons[but].color(self.buttonColors[but+4])
             self.buttons[but].down_color(self.buttonColors[but])
-
-        for but in range(4) :
-            self.resizable(self.buttons[but])
-        self.resizable(self.buttonBackground)
 
         self.countdown = Fl_Box(height//8 + buttonSize[0],
                         height//8 + 12 + buttonSize[1],
@@ -95,6 +89,9 @@ class Blinken(Fl_Window) :
         self.currentScore.labelcolor(7)
         self.currentScore.labelsize(22)
         self.currentScore.align(FL_ALIGN_LEFT)
+
+        self.resizable(self)
+
         self.redraw()
         self.end()
 
@@ -128,11 +125,14 @@ class Blinken(Fl_Window) :
             self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\
                     (len(self.masterSequence)//self.patternAdditions))
             Fl.remove_timeout(self.gameOver)
+#            self.simpleCountdown()
             self.simpleCountdown()
-            self.runSequenceLoop()
+            for t in range(1,4) :
+                Fl.add_timeout(0.33*t,self.simpleCountdown,3-t)
 
 
     def chooseDifficulty(self,wid,difficulty) :
+        self.removeAllTimeouts()
         match difficulty :
             case 2 :
                 self.gameDifficulty = 2
@@ -140,12 +140,13 @@ class Blinken(Fl_Window) :
                 self.gameDifficulty = 1
             case 0 :
                 self.gameDifficulty = 0
+        self.currentScore.label("00")
+        self.masterSequence = []
+        self.sequenceStarted = False
 
     def simpleCountdown(self,period=3) :
             self.countdown.label("."*period)
             self.redraw()
-            Fl.flush()
-            Fl.check()
             if period == 0 :
                 self.runSequenceLoop()
 
@@ -153,6 +154,7 @@ class Blinken(Fl_Window) :
         if self.isRecordsShowing is True :
             self.showRecords()
             return
+        self.removeAllTimeouts()
         self.currentScore.label("00")
         self.masterSequence = []
         self.sequenceStarted = False
@@ -166,36 +168,38 @@ class Blinken(Fl_Window) :
                 self.patternAdditions = 1
 
         self.simpleCountdown()
-        Fl.add_timeout(0.33,self.simpleCountdown,2)
-        Fl.add_timeout(0.67,self.simpleCountdown,1)
-        Fl.add_timeout(1.0,self.simpleCountdown,0)
+        for t in range(1,4) :
+            Fl.add_timeout(0.33*t,self.simpleCountdown,3-t)
+
+    def flashButton(self,buttonpress) :
+        button,press = buttonpress[:-1]
+        iteration = buttonpress[-1]
+
+        if press is True :
+            self.playSound(button)
+            self.buttons[button].color(self.buttonColors[button])
+            self.redraw()
+            Fl.add_timeout(0.5,self.flashButton,(button,False,iteration))
+        else :
+            self.buttons[button].color(self.buttonColors[button+4])
+            self.redraw()
+
+            if iteration == self.sequenceLength - 1 :
+                self.sequenceStarted = True
+                self.redraw()
+                self.gameOverTimer = True
+                Fl.add_timeout(5.0,self.gameOver)
+
 
     def runSequenceLoop(self) :
-        sequenceLength = len(self.masterSequence) + self.patternAdditions
-        for i in range(sequenceLength) :
+        self.sequenceLength = len(self.masterSequence) + self.patternAdditions
+        for i in range(self.sequenceLength):
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
                 self.masterSequence.append(chosenButton)
             else :
                 chosenButton = self.masterSequence[i]
-
-            self.playSound(chosenButton)
-            self.buttons[chosenButton].color(self.buttonColors[chosenButton])
-            self.redraw()
-            Fl.flush()
-            Fl.check()
-            time.sleep(0.5)
-            self.buttons[chosenButton].color(self.buttonColors[chosenButton+4])
-            self.redraw()
-            Fl.flush()
-            Fl.check()
-            if i != sequenceLength - 1 :
-                time.sleep(0.25)
-
-        self.sequenceStarted = True
-        self.redraw()
-        self.gameOverTimer = True
-        Fl.add_timeout(5.0,self.gameOver)
+            Fl.add_timeout(0.75*i,self.flashButton,(chosenButton,True,i))
 
     def showRecords(self,wid=None) :
         if self.isRecordsShowing is False :
@@ -210,7 +214,7 @@ class Blinken(Fl_Window) :
     def writeRecords(self) :
         calculatedScore = (len(self.masterSequence) - self.patternAdditions)//self.patternAdditions
         try :
-            with open(Blinken.pathRecords,"rb") as recordsFile :
+            with open("ssrecords.pickle","rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
                 recordsList.append((calculatedScore,
                                     Blinken.difficultyNames[self.gameDifficulty]))
@@ -218,7 +222,7 @@ class Blinken(Fl_Window) :
             recordsList = [(calculatedScore,
                             Blinken.difficultyNames[self.gameDifficulty])]
 
-        with open(Blinken.pathRecords,"wb") as recordsFile :
+        with open("ssrecords.pickle","wb") as recordsFile :
             recordsList.sort(reverse=True)
             recordsList = sorted(recordsList,key=lambda r: r[1])
             pickle.dump(recordsList,recordsFile)
@@ -226,7 +230,7 @@ class Blinken(Fl_Window) :
     def updateRecords(self) :
         self.records.clear()
         try :
-            with open(Blinken.pathRecords,"rb") as recordsFile :
+            with open("ssrecords.pickle","rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
             recordsList = list(filter(lambda r: r[0] > 0,recordsList))
 
@@ -256,6 +260,7 @@ class Blinken(Fl_Window) :
 
     def gameOver(self,timedOut=True) :
         self.playSound(4)
+        self.removeAllTimeouts()
         for but in self.buttons :
             but.value(0)
         if timedOut is True :
@@ -267,6 +272,15 @@ class Blinken(Fl_Window) :
         self.masterSequence = []
         self.userSequence = []
         self.sequenceStarted = False
+
+    def removeAllTimeouts(self) :
+        for but in range(len(self.buttons)) :
+            self.buttons[but].color(self.buttonColors[but+4])
+        Fl.remove_timeout(self.gameOver)
+        Fl.remove_timeout(self.flashButton)
+        Fl.remove_timeout(self.simpleCountdown)
+        self.countdown.label(None)
+        self.redraw()
 
 
 simonsays = Blinken(title="Blinken")
