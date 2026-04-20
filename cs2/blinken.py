@@ -4,21 +4,22 @@ import pickle
 from sys import exit
 try :
     from tkinter import Tk
-except ModuleNotFoundError as e :
-    fl_message(f"{e}: Dependency Missing <tkinter>")
-    exit()
-except ImportError as e :
-    fl_message(f"{e}: Dependency Missing <tk>")
-    exit()
+    importSuccess = True
+except (ModuleNotFoundError,ImportError) :
+    importSuccess = False
 from subprocess import Popen
 
 
 class Blinken(Fl_Window) :
     soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3","error.mp3")
     difficultyNames = ("Normal","Hard","Extreme")
-    resolutionFinder = Tk()
-    defaultWidth = resolutionFinder.winfo_screenwidth()//2
-    defaultHeight = resolutionFinder.winfo_screenheight()//2
+    if importSuccess :
+        resolutionFinder = Tk()
+        defaultWidth = resolutionFinder.winfo_screenwidth()//2
+        defaultHeight = resolutionFinder.winfo_screenheight()//2
+    else :
+        defaultWidth = 960
+        defaultHeight = 540
 
     def __init__(self,width=defaultWidth,height=defaultHeight,title="window_title") :
         super().__init__(width,height,title)
