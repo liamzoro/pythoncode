@@ -11,6 +11,9 @@ except (ModuleNotFoundError,ImportError) as e :
     print(e)
 from subprocess import Popen
 
+# DISCLAMER: I used camelCase in my code because that's what I find cleaner
+# I am aware the norm is snake_case, but I think it's ugly
+# I used extremely descriptive variable names because that is widely the best practice
 
 class Blinken(Fl_Window) :
     soundEffects = ("yellow.mp3","red.mp3","blue.mp3","green.mp3","error.mp3")
@@ -31,7 +34,7 @@ class Blinken(Fl_Window) :
         self.userSequence = []
         self.patternAdditions = 1
         self.sequenceLength = 0
-        self.sequenceStarted = False
+        self.allowInputs = False
         self.isRecordsShowing = False
 
         self.begin()
@@ -50,7 +53,7 @@ class Blinken(Fl_Window) :
                       self.buttonBackground.h()//2 - height//32)
         buttonPosition = (0,self.buttonBackground.w()//2 + height//32,
                           self.buttonBackground.h()//2 + height//32) # to prevent repeated code ^^^
-        self.buttonColors = [3,128,220,2,93,80,176,60]
+        self.buttonColors = [3,130,220,2,93,80,176,60]
 
         for but in range(4) : # took some time, but figured out equations that got the right indices
             self.buttons.append(Fl_Button(height//8 + buttonPosition[(but*3)%2],
@@ -100,7 +103,7 @@ class Blinken(Fl_Window) :
 
     def handleClick(self,wid) :
         button = len(wid.label())
-        if self.sequenceStarted is False :
+        if self.allowInputs is False :
             return # makes clicks do nothing while sequence is playing out
 
         if button == 3 : # a pretty elegant system if i do say so myself
@@ -113,17 +116,17 @@ class Blinken(Fl_Window) :
             self.userSequence.append(0)
             
         if self.userSequence != self.masterSequence[:len(self.userSequence)] :
-            self.gameOver(False)
+            self.gameOver()
             return # on every click, checks equality of portion of masterSequence with userSequence ^^^
 
         Fl.remove_timeout(self.gameOver)
-        Fl.add_timeout(5.0,self.gameOver) # resets gameOver timeout on every click
+        Fl.add_timeout(5.0,self.gameOver,True) # resets gameOver timeout on every click
         self.playSound(button)
 
         if len(self.userSequence) == len(self.masterSequence) :
             self.userSequence = []
-            self.sequenceStarted = False
-            self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\
+            self.allowInputs = False
+            self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\ # see references
                     (len(self.masterSequence)//self.patternAdditions)) # used lambda func to substitute <<<THAT for "score"
             # to add zero before single digit numbers ^^^
             Fl.remove_timeout(self.gameOver)
@@ -146,7 +149,7 @@ class Blinken(Fl_Window) :
                 self.label(f"{self.title} - Normal")
         self.currentScore.label("00")
         self.masterSequence = []
-        self.sequenceStarted = False
+        self.allowInputs = False
 
     def simpleCountdown(self,period=3) : # ( ...  ..  . ) 3 2 1 GO!
             self.countdown.label("."*period)
@@ -162,42 +165,44 @@ class Blinken(Fl_Window) :
         self.currentScore.label("00")
         self.currentScore.labelfont(FL_HELVETICA)
         self.masterSequence = []
-        self.sequenceStarted = False
+        self.allowInputs = False
 
         self.simpleCountdown()
-        for t in range(1,4) :
+        for t in range(1,4) : # again, clunky but it works
             Fl.add_timeout(0.33*t,self.simpleCountdown,3-t)
 
-    def flashButton(self,buttonpress) :
-        button,press = buttonpress[:-1]
-        iteration = buttonpress[-1]
+    def flashButton(self,button_press) :
+        button,press = button_press[:-1] # neat trick to unpack a tuple
+        iteration = button_press[-1]
 
-        if press is True :
+        if press is True : # IF "pressing" button and not "releasing" it
             self.playSound(button)
             self.buttons[button].color(self.buttonColors[button])
             self.redraw()
             Fl.add_timeout(0.5,self.flashButton,(button,False,iteration))
+            # in 0.5 seconds, "release" button (press=False)
         else :
             self.buttons[button].color(self.buttonColors[button+4])
             self.redraw()
 
-            if iteration == self.sequenceLength - 1 :
-                self.sequenceStarted = True
+            if iteration == self.sequenceLength - 1 : # IF last button, allow inputs and start timer
+                self.allowInputs = True
                 self.redraw()
-                Fl.add_timeout(5.0,self.gameOver)
+                Fl.add_timeout(5.0,self.gameOver,True)
 
 
     def runSequenceLoop(self) :
         self.sequenceLength = len(self.masterSequence) + self.patternAdditions
+        # since sequence length changes in the for loop, it is stored beforehand
         for i in range(self.sequenceLength):
             if i + 1 > len(self.masterSequence) :
                 chosenButton = random.randrange(4)
                 self.masterSequence.append(chosenButton)
             else :
                 chosenButton = self.masterSequence[i]
-            Fl.add_timeout(0.75*i,self.flashButton,(chosenButton,True,i))
+            Fl.add_timeout(0.75*i,self.flashButton,(chosenButton,True,i)) # 0.75*i, 0.5 on, 0.25 off
 
-    def showRecords(self,wid=None) :
+    def showRecords(self,wid=None) : # completely self explanatory
         if self.isRecordsShowing is False :
             self.records.show()
             self.isRecordsShowing = True
@@ -206,28 +211,29 @@ class Blinken(Fl_Window) :
             self.isRecordsShowing = False
         self.redraw()
 
-    def writeRecords(self) :
+    def writeRecords(self) : # i'm certain this could be done better, but it's fast and it works
         calculatedScore = (len(self.masterSequence) - self.patternAdditions)//self.patternAdditions
-        try :
-            with open("ssrecords.pickle","rb") as recordsFile :
+        try : # checks if ssrecords.pickle exists
+            with open("ssrecords.pickle","rb") as recordsFile : # basic file i/o
                 recordsList = list(pickle.load(recordsFile))
                 recordsList.append((calculatedScore,
                                     Blinken.difficultyNames[self.patternAdditions]))
-        except (FileNotFoundError,EOFError):
+        except (FileNotFoundError,EOFError): # if no ssrecords.pickle, 
             recordsList = [(calculatedScore,
                             Blinken.difficultyNames[self.patternAdditions])]
+        # creates LIST of RECORDS ^^^
 
-        with open("ssrecords.pickle","wb") as recordsFile :
+        with open("ssrecords.pickle","wb") as recordsFile : # stores the new record
             recordsList.sort(reverse=True)
             recordsList = sorted(recordsList,key=lambda r: r[1])
             pickle.dump(recordsList,recordsFile)
 
     def updateRecords(self) :
-        self.records.clear()
+        self.records.clear() # blank slate
         try :
             with open("ssrecords.pickle","rb") as recordsFile :
                 recordsList = list(pickle.load(recordsFile))
-            recordsList = list(filter(lambda r: r[0] > 0,recordsList))
+            recordsList = list(filter(lambda r: r[0] > 0,recordsList)) # see references
 
             extremeRecords = ["- Extreme","\n"]
             hardRecords = ["- Hard","\n"]
@@ -241,8 +247,9 @@ class Blinken(Fl_Window) :
                 elif "Normal" in r :
                     normalRecords.insert(-1,r)
             recordsList = extremeRecords + hardRecords + normalRecords
+        # this whole thing could probably be done more elegantly, but it works and it works well ^^^
 
-            for rec in recordsList :
+            for rec in recordsList : # adds all the records
                 if isinstance(rec,str) :
                     self.records.add(rec)
                     continue
@@ -253,7 +260,7 @@ class Blinken(Fl_Window) :
     def playSound(self,sound) :
         Popen(["paplay",Blinken.soundEffects[sound]]) # cleaner and more readable than typing this a bunch
 
-    def gameOver(self,timedOut=True) :
+    def gameOver(self,timedOut=False) : # resets everything and removes all timeouts
         self.playSound(4)
         self.currentScore.labelfont(FL_HELVETICA_BOLD)
         self.removeAllTimeouts()
@@ -267,9 +274,9 @@ class Blinken(Fl_Window) :
         self.updateRecords()
         self.masterSequence = []
         self.userSequence = []
-        self.sequenceStarted = False
+        self.allowInputs = False
 
-    def removeAllTimeouts(self) :
+    def removeAllTimeouts(self) : # it's in the name, pal
         for but in range(len(self.buttons)) :
             self.buttons[but].color(self.buttonColors[but+4])
         Fl.remove_timeout(self.gameOver)
@@ -289,8 +296,7 @@ Fl.run()
 '''
 References:
 [Line(s), Link]
-5 + 9, https://stackoverflow.com/questions/2057045/os-makedirs-doesnt-understand-in-my-path
-227, https://www.geeksforgeeks.org/python/lambda-filter-python-examples/
-228, https://stackoverflow.com/questions/10695139/sort-a-list-of-tuples-by-2nd-item-integer-value
-128, https://stackoverflow.com/questions/1585322/is-there-a-way-to-perform-if-in-pythons-lambda
+128-129, https://stackoverflow.com/questions/1585322/is-there-a-way-to-perform-if-in-pythons-lambda
+227, https://stackoverflow.com/questions/10695139/sort-a-list-of-tuples-by-2nd-item-integer-value
+235, https://www.geeksforgeeks.org/python/lambda-filter-python-examples/
 '''
