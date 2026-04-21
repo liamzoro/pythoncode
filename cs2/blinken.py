@@ -126,8 +126,8 @@ class Blinken(Fl_Window) :
         if len(self.userSequence) == len(self.masterSequence) :
             self.userSequence = []
             self.allowInputs = False
-            self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\ # see references
-                    (len(self.masterSequence)//self.patternAdditions)) # used lambda func to substitute <<<THAT for "score"
+            self.currentScore.label((lambda score: f"0{score}" if score < 10 else f"{score}")\
+                    (len(self.masterSequence)//self.patternAdditions)) # see references
             # to add zero before single digit numbers ^^^
             Fl.remove_timeout(self.gameOver)
             self.simpleCountdown()
