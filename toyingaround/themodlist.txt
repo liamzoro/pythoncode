@@ -1,0 +1,23 @@
+Gamma-Utils-3.0.0+mc26.1.jar
+Resourcify (26.1-fabric)-1.8.2.jar
+c2me-fabric-mc26.1-0.3.7+alpha.0.61.jar
+cloth-config-26.1.154.jar
+entityculling-fabric-1.10.0-mc26.1.jar
+fabric-api-0.144.3+26.1.jar
+fabric-language-kotlin-1.13.10+kotlin.2.3.20.jar
+ferritecore-9.0.0-fabric.jar
+forcecloseloadingscreen-2.3.5.jar
+iris-fabric-1.10.8+mc26.1.jar
+language-reload-1.7.6+26.1.jar
+lithium-fabric-0.22.1+mc26.1.jar
+midnightlib-fabric-1.9.2+26.1.jar
+modmenu-18.0.0-alpha.8.jar
+moreculling-fabric-26.1-1.7.0-beta.1.jar
+packetfixer-fabric-3.3.4-26.1.jar
+placeholder-api-3.0.0-beta.2+26.1.jar
+puzzle-fabric-2.3.1+26.1.jar
+reeses-sodium-options-fabric-2.0.4+mc26.1.jar
+sodium-fabric-0.8.7+mc26.1.jar
+spark-1.10.172-fabric.jar
+vmp-fabric-mc26.1-0.2.0+beta.7.232-all.jar
+yet_another_config_lib_v3-3.9.1+26.1-fabric.jar
